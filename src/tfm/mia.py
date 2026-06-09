@@ -1,14 +1,32 @@
-"""Auditoría adversarial mediante ataques de inferencia de membresía (MIA)."""
+"""Auditoría adversarial mediante ataques de inferencia de membresía (MIA).
 
-from typing import Dict
+Coexisten dos implementaciones complementarias, ambas Black-Box con
+clasificador atacante Random Forest (metodología de Shokri et al., 2017):
+
+- `run_mia_blackbox` (Fase 6): recibe un modelo objetivo YA entrenado y
+  devuelve métricas centradas en accuracy/advantage del atacante. Muestrea
+  hasta 10k/5k ejemplos con un RNG sembrado por `config.RANDOM_STATE`.
+- `mia_attack_rates` (Fase 9): entrena internamente la Regresión Logística
+  objetivo y devuelve (TPR, FPR, Advantage, AUC). Usa un RNG independiente
+  por configuración (`np.random.default_rng(seed)`), con la semilla tomada
+  de `config.DP_SEEDS` por índice de escenario: esto elimina la dependencia
+  del orden de las configuraciones y permite añadir o reordenar escenarios
+  sin alterar los muestreos de los demás.
+
+No se unifican en una sola función porque sus semánticas de muestreo y sus
+métricas difieren y los números de la memoria dependen de cada una tal cual.
+"""
+
+from typing import Dict, Tuple
 
 import numpy as np
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, roc_auc_score
 
 from art.attacks.inference.membership_inference import MembershipInferenceBlackBox
 from art.estimators.classification.scikitlearn import ScikitlearnLogisticRegression
 
-from src import config
+from tfm import config
 
 
 def run_mia_blackbox(
@@ -91,3 +109,66 @@ def run_mia_blackbox(
         "rate_member_predicted_1": round(rate_member, 4),
         "rate_non_member_predicted_1": round(rate_non_member, 4),
     }
+
+
+def mia_attack_rates(
+    X_train: np.ndarray,
+    y_train: np.ndarray,
+    X_test: np.ndarray,
+    y_test: np.ndarray,
+    seed: int,
+    n_attack: int = 2000,
+) -> Tuple[float, float, float, float]:
+    """Ejecuta el ataque MIA Black-Box con un RNG local sembrado por `seed`.
+
+    Entrena internamente la Regresión Logística objetivo y devuelve
+    (TPR, FPR, Advantage, AUC). Las matrices deben llegar en float32
+    (ver `arx_io.load_arx_arrays(dtype=np.float32)`).
+    """
+    target = LogisticRegression(
+        max_iter=1000,
+        random_state=config.RANDOM_STATE,
+        class_weight="balanced",
+    )
+    target.fit(X_train, y_train)
+    art_classifier = ScikitlearnLogisticRegression(
+        model=target, clip_values=(X_train.min(), X_train.max())
+    )
+
+    rng = np.random.default_rng(seed)
+    n_attack = min(n_attack, len(X_test))
+    attack_idx = rng.choice(len(X_train), n_attack, replace=False)
+    test_idx = rng.choice(len(X_test), n_attack, replace=False)
+    attack = MembershipInferenceBlackBox(
+        estimator=art_classifier, attack_model_type="rf"
+    )
+
+    half = n_attack // 2
+    attack.fit(
+        X_train[attack_idx[:half]], y_train[attack_idx[:half]],
+        X_test[test_idx[:half]], y_test[test_idx[:half]],
+    )
+    inf_members = attack.infer(X_train[attack_idx[half:]], y_train[attack_idx[half:]])
+    inf_non_members = attack.infer(X_test[test_idx[half:]], y_test[test_idx[half:]])
+
+    # AUC del atacante a partir de las probabilidades por ejemplo
+    proba_m = np.asarray(
+        attack.infer(X_train[attack_idx[half:]], y_train[attack_idx[half:]], probabilities=True)
+    ).reshape(-1)
+    proba_n = np.asarray(
+        attack.infer(X_test[test_idx[half:]], y_test[test_idx[half:]], probabilities=True)
+    ).reshape(-1)
+    # Si vuelve (n,2) tras reshape, descartar primera mitad (clase 0)
+    if len(proba_m) == 2 * half:
+        proba_m = proba_m.reshape(half, 2)[:, -1]
+        proba_n = proba_n.reshape(half, 2)[:, -1]
+    scores = np.concatenate([proba_m, proba_n])
+    labels = np.concatenate([np.ones(half, dtype=int), np.zeros(half, dtype=int)])
+    try:
+        auc = float(roc_auc_score(labels, scores))
+    except ValueError:
+        auc = float("nan")
+
+    tpr = float(inf_members.mean())
+    fpr = float(inf_non_members.mean())
+    return tpr, fpr, tpr - fpr, auc

@@ -6,13 +6,12 @@ from typing import Dict, List
 import numpy as np
 import pandas as pd
 from sklearn.metrics import accuracy_score, f1_score
-from sklearn.preprocessing import StandardScaler
 
-from src import config
-from src.models import build_dp_models
-from src.preprocessing import (
+from tfm import config
+from tfm.arx_io import load_arx_arrays
+from tfm.models import build_dp_models
+from tfm.preprocessing import (
     binarize_target,
-    joint_ohe,
     percentile_bounds,
     percentile_data_norm,
 )
@@ -70,26 +69,16 @@ def dp_on_kanonimized(
     epsilons = epsilons or [0.1, 1.0, 10.0]
     n_repetitions = n_repetitions or config.N_REPETITIONS_DP
 
-    df_anon = pd.read_csv(filepath_kanon, sep=";")
-    df_anon = df_anon[~df_anon["race"].astype(str).str.fullmatch(r"\*")]
+    arrays = load_arx_arrays(filepath_kanon, df_test_raw)
 
-    y_anon = binarize_target(df_anon[config.TARGET_COLUMN]).values
-    X_anon = df_anon.drop(columns=[config.TARGET_COLUMN])
-    X_test = df_test_raw.drop(columns=[config.TARGET_COLUMN])
-
-    X_anon_array, X_test_array = joint_ohe(X_anon, X_test)
-    scaler = StandardScaler().fit(X_anon_array)
-    X_anon_scaled = scaler.transform(X_anon_array)
-    X_test_scaled = scaler.transform(X_test_array)
-
-    data_norm = percentile_data_norm(X_anon_scaled, percentile=95)
-    bounds = percentile_bounds(X_anon_scaled)
+    data_norm = percentile_data_norm(arrays.X_anon_scaled, percentile=95)
+    bounds = percentile_bounds(arrays.X_anon_scaled)
     y_test = binarize_target(df_test_raw[config.TARGET_COLUMN]).values
 
     return sweep_dp(
-        X_anon_scaled,
-        X_test_scaled,
-        y_anon,
+        arrays.X_anon_scaled,
+        arrays.X_test_scaled,
+        arrays.y_anon,
         y_test,
         data_norm,
         bounds,

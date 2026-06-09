@@ -7,14 +7,13 @@ jerarquías de generalización y la evaluación post-anonimización.
 from pathlib import Path
 from typing import Dict, List
 
-import numpy as np
 import pandas as pd
 from sklearn.metrics import accuracy_score, f1_score
-from sklearn.preprocessing import StandardScaler
 
-from src import config
-from src.models import build_baseline_models
-from src.preprocessing import binarize_target, joint_ohe
+from tfm import config
+from tfm.arx_io import load_arx_arrays
+from tfm.models import build_baseline_models
+from tfm.preprocessing import binarize_target
 
 
 # Jerarquías estáticas — coinciden con las descritas en la memoria
@@ -80,7 +79,7 @@ def export_for_arx(df_reduced: pd.DataFrame, train_index, test_index, output_dir
     df_train_raw = df_reduced.loc[train_index].copy()
     df_test_raw = df_reduced.loc[test_index].copy()
 
-    for column in ("admission_type_id", "time_in_hospital"):
+    for column in config.QID_NUMERIC_AS_STR:
         df_train_raw[column] = df_train_raw[column].astype(str)
         df_test_raw[column] = df_test_raw[column].astype(str)
 
@@ -110,36 +109,20 @@ def evaluate_kanon(filepath_anon: Path, k_value: int, df_test_raw: pd.DataFrame)
     Aplica OHE conjunto sobre [train_anon ∪ test_raw] para garantizar
     un column space idéntico en entrenamiento y evaluación.
     """
-    df_anon = pd.read_csv(filepath_anon, sep=";")
-    n_initial = len(df_anon)
-
-    # Filas suprimidas por ARX (todos los QIDs marcados con '*')
-    mask_suppressed = df_anon["race"].astype(str).str.fullmatch(r"\*")
-    df_anon = df_anon[~mask_suppressed].copy()
-    suppression_pct = (n_initial - len(df_anon)) / n_initial * 100
-
-    y_anon = binarize_target(df_anon[config.TARGET_COLUMN]).values
-    X_anon = df_anon.drop(columns=[config.TARGET_COLUMN])
-    X_test = df_test_raw.drop(columns=[config.TARGET_COLUMN])
-
-    X_anon_array, X_test_array = joint_ohe(X_anon, X_test)
-    scaler = StandardScaler().fit(X_anon_array)
-    X_anon_scaled = scaler.transform(X_anon_array)
-    X_test_scaled = scaler.transform(X_test_array)
-
+    arrays = load_arx_arrays(filepath_anon, df_test_raw)
     y_test = binarize_target(df_test_raw[config.TARGET_COLUMN]).values
 
     rows: List[Dict] = []
     for name, model in build_baseline_models().items():
-        model.fit(X_anon_scaled, y_anon)
-        predictions = model.predict(X_test_scaled)
+        model.fit(arrays.X_anon_scaled, arrays.y_anon)
+        predictions = model.predict(arrays.X_test_scaled)
         rows.append({
             "Modelo": name,
             "Accuracy": accuracy_score(y_test, predictions),
             "F1-Score": f1_score(y_test, predictions, average="weighted"),
             "k": k_value,
-            "pct_suprimido": round(suppression_pct, 2),
-            "filas_efectivas": len(df_anon),
-            "columnas_OHE": X_anon_array.shape[1],
+            "pct_suprimido": round(arrays.suppression_pct, 2),
+            "filas_efectivas": arrays.n_rows,
+            "columnas_OHE": arrays.n_ohe_columns,
         })
     return pd.DataFrame(rows)

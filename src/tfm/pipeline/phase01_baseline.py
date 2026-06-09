@@ -1,27 +1,20 @@
 """Fase 1 — Establece el baseline de utilidad sin privacidad.
 
 Entrena los cuatro modelos de referencia sobre el conjunto Diabetes 130-US
-hospitals y guarda las métricas en results/baseline.csv.
-
-Uso:
-    python scripts/01_baseline.py
+hospitals y guarda las métricas en arx_kit/results/kanon/baseline.csv.
 """
 
 import pandas as pd
 from sklearn.metrics import accuracy_score, f1_score
 
-from src import config
-from src.data_loader import load_clean_reduced
-from src.models import build_baseline_models
-from src.preprocessing import binarize_target, fit_scaler, stratified_split
+from tfm import config
+from tfm.data_loader import load_clean_reduced
+from tfm.models import build_baseline_models
+from tfm.preprocessing import fit_scaler, stratified_split
 
 
-def main() -> None:
-    config.RESULTS_DIR.mkdir(exist_ok=True)
-    config.RESULTS_KANON_DIR.mkdir(parents=True, exist_ok=True)
-    config.RESULTS_DP_DIR.mkdir(parents=True, exist_ok=True)
-    config.RESULTS_LDIV_TCLOS_DIR.mkdir(parents=True, exist_ok=True)
-    config.RESULTS_MIA_DIR.mkdir(parents=True, exist_ok=True)
+def run() -> None:
+    config.ensure_dirs()
 
     df = load_clean_reduced()
     print(f"Dataset tras limpieza y reducción: {df.shape}")
@@ -51,4 +44,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    run()

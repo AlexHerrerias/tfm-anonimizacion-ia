@@ -3,19 +3,14 @@
 Ejecuta ε ∈ {0.1, 0.5, 1, 5, 10} con veinte repeticiones por punto
 (semillas dispersas, ver config.DP_SEEDS) sobre los modelos de
 Regresión Logística y Naive Bayes Gaussian.
-
-Uso:
-    python scripts/04_dp_sweep.py
 """
 
-import pandas as pd
-
-from src import config
-from src.data_loader import load_clean_reduced
-from src.differential_privacy import sweep_dp
-from src.fairness import fairness_per_race_dp
-from src.plotting import plot_dp_degradation, plot_fairness_curves
-from src.preprocessing import (
+from tfm import config
+from tfm.data_loader import load_clean_reduced
+from tfm.differential_privacy import sweep_dp
+from tfm.fairness import fairness_per_race_dp
+from tfm.plotting import plot_dp_degradation, plot_fairness_curves
+from tfm.preprocessing import (
     fit_scaler,
     load_baselines,
     percentile_bounds,
@@ -24,12 +19,8 @@ from src.preprocessing import (
 )
 
 
-def main() -> None:
-    config.RESULTS_DIR.mkdir(exist_ok=True)
-    config.RESULTS_KANON_DIR.mkdir(parents=True, exist_ok=True)
-    config.RESULTS_DP_DIR.mkdir(parents=True, exist_ok=True)
-    config.RESULTS_LDIV_TCLOS_DIR.mkdir(parents=True, exist_ok=True)
-    config.RESULTS_MIA_DIR.mkdir(parents=True, exist_ok=True)
+def run() -> None:
+    config.ensure_dirs()
 
     df = load_clean_reduced()
     X_train, X_test, y_train, y_test = stratified_split(df)
@@ -86,4 +77,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    run()

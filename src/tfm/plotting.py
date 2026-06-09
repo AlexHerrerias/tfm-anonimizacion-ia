@@ -1,12 +1,11 @@
 """Generación de figuras consumidas por la memoria del TFM."""
 
 from pathlib import Path
-from typing import List
 
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from src import config
+from tfm import config
 
 
 def plot_kanon_degradation(df_results: pd.DataFrame, output_path: Path) -> None:

@@ -14,98 +14,88 @@ adversarial mediante MIA (`adversarial-robustness-toolbox`).
 
 ```
 .
-├── src/                       Módulos del pipeline (importables como paquete)
-│   ├── config.py              Constantes y rutas
-│   ├── data_loader.py         Ingesta UCI, limpieza, agrupación CIE-9
+├── pyproject.toml             Paquete instalable `tfm` + comando de consola
+├── src/tfm/                   Módulos del pipeline
+│   ├── config.py              Constantes, rutas y configuraciones (fuente única)
+│   ├── data_loader.py         Ingesta UCI (con caché local), limpieza, CIE-9
 │   ├── preprocessing.py       Split, OHE, escalado, percentiles para DP
+│   ├── arx_io.py              Carga unificada de CSVs exportados por ARX
+│   ├── profiling.py           Riesgo basal de reidentificación (fase 00)
 │   ├── models.py              Constructores de modelos baseline y DP
 │   ├── kanon.py               Soporte ARX (exportar CSV, jerarquías, evaluar)
 │   ├── ldiv_tclos.py          l-diversidad, t-closeness y triples (k+l+t)
 │   ├── differential_privacy.py  Sweep ε y combinación k+DP
 │   ├── fairness.py            Disparidad por subgrupo race
-│   ├── statistical_tests.py   McNemar y Wilcoxon
+│   ├── statistical_tests.py   McNemar y Wilcoxon (con Bonferroni)
 │   ├── mia.py                 Membership Inference Attack Black-Box
-│   └── plotting.py            Figuras de la memoria
-├── scripts/                   Orquestadores secuenciales
-│   ├── 01_baseline.py
-│   ├── 02_export_arx.py
-│   ├── 03_evaluate_kanon.py
-│   ├── 04_dp_sweep.py
-│   ├── 05_combo.py
-│   ├── 06_mia.py
-│   ├── 07_statistical_tests.py
-│   ├── 08_eval_ldiv_tclos.py
-│   ├── 09_mia_ldiv_tclos.py
-│   ├── 10_plots_ldiv_tclos.py
-│   └── 11_mcnemar_ldiv_tclos.py
-├── notebooks/
-│   └── TFM_pipeline.ipynb     Notebook orquestador para Colab
+│   ├── plotting.py            Figuras de la memoria
+│   └── pipeline/              Fases 00–11 + CLI (`tfm run …`)
 ├── arx_kit/                   Entradas, salidas y resultados experimentales
 │   ├── inputs/                CSVs y jerarquías que consume ARX Desktop
-│   │   ├── arx_train.csv
-│   │   ├── arx_test.csv
-│   │   ├── arx_hierarchies/   Jerarquías de generalización por QID
-│   │   ├── GUIA_ARX_PASO_A_PASO.md
-│   │   ├── tfm-arx.deid       Proyecto ARX de ejemplo
-│   │   └── tfm-arx_k2.deid    Proyecto ARX guardado (k=2)
-│   ├── arx_outputs/           CSVs anonimizados exportados desde ARX
-│   └── results/               Outputs del pipeline Python
-│       ├── kanon/             Resultados k-anonimidad
-│       ├── dp/                Resultados Privacidad Diferencial + combo
-│       ├── ldiv_tclos/        Resultados extensión l-diversidad / t-closeness
-│       └── mia/               Resultados auditoría MIA
-├── results/                   Figuras (PNG) de la memoria
-├── docs/                      Material complementario
-├── requirements.txt
-├── TFM_Memory.pdf             The Memory of the TFM in pdf format
-└── .gitignore
+│   ├── arx_outputs/           CSVs anonimizados exportados desde ARX (versionados)
+│   └── results/               CSVs de resultados del pipeline (versionados)
+├── results/                   Figuras (PNG) de la memoria (no versionadas)
+├── docs/guia_arx.md           Guía paso a paso de ARX Desktop (único paso manual)
+├── legacy/                    Notebook Colab original, congelado (ver legacy/README.md)
+├── requirements.txt           Espejo de las dependencias del paquete
+└── TFM_Memory.pdf             Memoria del TFM
 ```
 
-## Requisitos
+## Instalación
 
-- Python ≥ 3.10
-- ARX Desktop (descargable en https://arx.deidentifier.org/) para la fase
-  de $k$-anonimidad.
-
-Las dependencias Python se instalan con:
+Requisitos: Python 3.10–3.12 y, solo para la fase de anonimización manual,
+ARX Desktop (<https://arx.deidentifier.org/>).
 
 ```bash
-pip install -r requirements.txt
+python -m venv .venv && source .venv/bin/activate
+pip install -e .
 ```
 
-## Ejecución del pipeline completo
+La instalación editable registra el comando `tfm` y ancla las rutas del
+pipeline al raíz del repositorio. Ya no es necesario exportar `PYTHONPATH`.
 
-El pipeline se compone de **once fases** que pueden ejecutarse en secuencia desde la raíz del repositorio:
+## Ejecución del pipeline
+
+El pipeline se compone de **doce fases** (00–11). Lista de fases:
 
 ```bash
-export PYTHONPATH=$PWD                      # imprescindible al ejecutar por ruta
-python scripts/01_baseline.py               # Fase 1: cota de utilidad
-python scripts/02_export_arx.py             # Fase 2: prepara arx_kit/inputs/ para ARX
-#   Ejecutar manualmente ARX Desktop con los CSV exportados (ver docs/guia_arx.md);
-#   guardar cada resultado en arx_kit/arx_outputs/arx_output_k<k>.csv
-python scripts/03_evaluate_kanon.py         # Fase 3: utilidad post-ARX + fairness
-python scripts/04_dp_sweep.py               # Fase 4: barrido de ε
-python scripts/05_combo.py                  # Fase 5: defensa en profundidad k+DP
-python scripts/06_mia.py                    # Fase 6: auditoría adversarial MIA
-python scripts/07_statistical_tests.py      # Fase 7: McNemar (k-anon) + Wilcoxon (DP)
-#   Exportar manualmente desde ARX los 9 CSV de l-div/t-closeness/triples
-#   con diag_1_category marcado como Sensitive, en arx_kit/arx_outputs/
-python scripts/08_eval_ldiv_tclos.py        # Fase 8: utilidad y equidad l/t
-python scripts/09_mia_ldiv_tclos.py         # Fase 9: MIA sobre configs estrictas l/t
-python scripts/10_plots_ldiv_tclos.py       # Fase 10: figuras del Cap. 4
-python scripts/11_mcnemar_ldiv_tclos.py     # Fase 11: McNemar sobre 4 configs extremas
+tfm list
 ```
 
-> **Nota:** los scripts se ejecutan como ficheros (`python scripts/0X_nombre.py`) y **no** como módulos (`python -m scripts.0X_nombre`), porque los nombres empiezan por dígito y no son identificadores Python válidos. Es **imprescindible exportar `PYTHONPATH=$PWD`** (o anteponer `PYTHONPATH=.` a cada comando) desde la raíz del repo para que `from src import config` resuelva.
+Ejecución completa o por fases:
 
-Cada script guarda sus resultados en `results/` (CSV con métricas y PNG
-con figuras). Los nombres de los archivos coinciden con los referenciados
-desde la memoria del TFM.
+```bash
+tfm run all          # las doce fases en secuencia
+tfm run 04           # una fase concreta
+tfm run 08 09 10 11  # varias fases en orden
+```
+
+| Fase | Qué hace | Salidas principales |
+|------|----------|---------------------|
+| 00 | Perfilado de privacidad (riesgo basal de reidentificación) | `perfil_privacidad.csv` |
+| 01 | Baseline de utilidad sin privacidad | `baseline.csv` |
+| 02 | Exporta CSVs y jerarquías para ARX Desktop | `arx_kit/inputs/*` |
+| —  | **Paso manual**: anonimizar en ARX Desktop ([docs/guia_arx.md](docs/guia_arx.md)) | `arx_kit/arx_outputs/*.csv` |
+| 03 | Utilidad post-ARX + fairness por `race` | `resultados_kanon.csv`, `fairness_kanon.csv`, `loss_disparity_kanon.csv` |
+| 04 | Barrido de ε (20 repeticiones) | `resultados_dp.csv`, `fairness_dp.csv` |
+| 05 | Defensa en profundidad k=10 + DP | `resultados_combo.csv` |
+| 06 | Auditoría adversarial MIA (6 escenarios) | `mia_results.csv` |
+| 07 | McNemar (k-anon) + Wilcoxon (DP), Bonferroni | `mcnemar_kanon.csv`, `wilcoxon_dp.csv` |
+| 08 | Utilidad/equidad/verificación l-div, t-clos y triples | `resultados_ldiv_tclos.csv`, `fairness_ldiv_tclos.csv`, `verificacion_ldiv_tclos.csv` |
+| 09 | MIA sobre configuraciones l/t estrictas | `mia_ldiv_tclos.csv` |
+| 10 | Figuras de la extensión l/t | 4 PNG en `results/` |
+| 11 | McNemar sobre 4 configuraciones l/t extremas | `mcnemar_ldiv_tclos.csv` |
+
+Los CSVs de resultados se guardan bajo `arx_kit/results/` y las figuras PNG
+en `results/`; los nombres coinciden con los referenciados desde la memoria.
+
+El dataset UCI se descarga por red la primera vez y queda cacheado en
+`data_cache/` (gitignored); borra esa carpeta para forzar una descarga limpia.
 
 ## Reproducibilidad
 
 Todos los componentes estocásticos están parametrizados por la semilla
-`RANDOM_STATE = 42` definida en `src/config.py`. El barrido de Privacidad
+`RANDOM_STATE = 42` definida en `tfm/config.py`. El barrido de Privacidad
 Diferencial utiliza **veinte repeticiones independientes** con semillas
 dispersas (`42, 137, 271, 314, 1729, 2718, 3141, 6022, 8128, 9999, 10007,
 11113, 13121, 17171, 19273, 23131, 29327, 31193, 33391, 37397`), elegidas
@@ -114,11 +104,23 @@ Con `n=20` el test de Wilcoxon de una muestra alcanza significancia
 estadística formal frente al baseline en todas las celdas con
 degradación consistente.
 
+Los modelos lineales y bayesianos (Regresión Logística, GaussianNB)
+reproducen los valores de la memoria de forma exacta; los modelos de árbol
+(Random Forest, Árbol de Decisión) pueden variar en el tercer decimal entre
+entornos por la resolución de empates en los splits, sensible a la versión
+de numpy/BLAS.
+
 ## Dataset
 
 Diabetes 130-US hospitals for years 1999-2008 (UCI Machine Learning
 Repository, ID 296). El conjunto se descarga automáticamente mediante
 `ucimlrepo` en la primera ejecución.
+
+## Notebook legacy
+
+El notebook original de Google Colab (`legacy/TFM_pipeline.ipynb`) quedó
+congelado al consolidarse el pipeline en el paquete `tfm`; ver
+[legacy/README.md](legacy/README.md).
 
 ## Cita
 

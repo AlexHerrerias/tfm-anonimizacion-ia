@@ -11,18 +11,29 @@ from sklearn.preprocessing import StandardScaler
 
 import diffprivlib.models as dpm
 
-from src import config
-from src.preprocessing import (
-    binarize_target,
-    joint_ohe,
-    percentile_bounds,
-    percentile_data_norm,
-)
+from tfm import config
+from tfm.arx_io import read_arx_csv
+from tfm.preprocessing import binarize_target, joint_ohe
 
 
 def loss_disparity(accuracies_by_subgroup: pd.Series) -> float:
     """Diferencia entre el subgrupo más favorecido y el menos favorecido."""
     return float(accuracies_by_subgroup.max() - accuracies_by_subgroup.min())
+
+
+def loss_disparity_table(df_fairness: pd.DataFrame, x_column: str = "k") -> pd.DataFrame:
+    """Tabla de Loss Disparity por nivel de privacidad.
+
+    Pivota la tabla de fairness (una fila por subgrupo y nivel) y calcula
+    la disparidad max-min de Accuracy para cada valor de `x_column`. Los
+    valores se citan en la memoria, por lo que se persisten en CSV.
+    """
+    pivot = df_fairness.pivot_table(index="race", columns=x_column, values="Accuracy", aggfunc="mean")
+    rows = [
+        {x_column: level, "loss_disparity": loss_disparity(pivot[level])}
+        for level in pivot.columns
+    ]
+    return pd.DataFrame(rows)
 
 
 def fairness_per_race_kanon(
@@ -35,8 +46,7 @@ def fairness_per_race_kanon(
     if k_value == 0:
         df_anon = df_train_raw.copy()
     else:
-        df_anon = pd.read_csv(filepath, sep=";")
-        df_anon = df_anon[~df_anon["race"].astype(str).str.fullmatch(r"\*")].copy()
+        df_anon, _ = read_arx_csv(filepath)
 
     y_anon = binarize_target(df_anon[config.TARGET_COLUMN]).values
     X_anon = df_anon.drop(columns=[config.TARGET_COLUMN])
