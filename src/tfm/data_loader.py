@@ -4,13 +4,27 @@ import numpy as np
 import pandas as pd
 from ucimlrepo import fetch_ucirepo
 
-from src import config
+from tfm import config
 
 
-def load_raw_dataset() -> pd.DataFrame:
-    """Descarga el dataset original desde el repositorio UCI."""
+def load_raw_dataset(use_cache: bool = True) -> pd.DataFrame:
+    """Descarga el dataset original desde el repositorio UCI.
+
+    La primera ejecución descarga por red y guarda una caché local en
+    formato pickle (preserva los dtypes exactos que produce el lector de
+    ucimlrepo). Las ejecuciones siguientes leen la caché y no requieren
+    conexión. Borrar `data_cache/` fuerza una nueva descarga.
+    """
+    if use_cache and config.UCI_CACHE_FILE.exists():
+        return pd.read_pickle(config.UCI_CACHE_FILE)
+
     dataset = fetch_ucirepo(id=config.DATASET_ID)
-    return pd.concat([dataset.data.features, dataset.data.targets], axis=1)
+    df = pd.concat([dataset.data.features, dataset.data.targets], axis=1)
+
+    if use_cache:
+        config.CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        df.to_pickle(config.UCI_CACHE_FILE)
+    return df
 
 
 def clean_dataset(df: pd.DataFrame) -> pd.DataFrame:

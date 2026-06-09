@@ -1,13 +1,21 @@
 # Dependencias del TFM — Anonimización y Privacidad en IA Sanitaria
+#
+# Espejo de [project.dependencies] en pyproject.toml (instalación rápida sin
+# el paquete). Para trabajar con el pipeline, preferir: pip install -e .
+#
+# Nota de coherencia: diffprivlib 0.6.6 exige numpy>=2.0 y scipy>=1.13.
+# Los pines históricos (numpy 1.26.4, pandas 2.1.4, scipy 1.11.4) eran
+# ininstalables junto a diffprivlib 0.6.6; este stack replica el entorno
+# Colab que produjo los números de la memoria.
 
 # Núcleo científico
-numpy==1.26.4
-pandas==2.1.4
-scipy==1.11.4
+numpy==2.0.2
+pandas==2.2.2
+scipy==1.13.1
 
 # Machine Learning y visualización
 scikit-learn==1.6.1
-matplotlib==3.8.2
+matplotlib==3.10.0
 
 # Ingesta del dataset UCI
 ucimlrepo==0.0.7

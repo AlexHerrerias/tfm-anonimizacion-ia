@@ -3,45 +3,34 @@
 Reutiliza la lógica de evaluación de k-anonimidad y añade:
 - Verificación de las restricciones l-diversity / t-closeness sobre el CSV
   exportado por ARX (post-hoc).
-- Cálculo de la Earth Mover's Distance con métrica Equal entre la
-  distribución del atributo sensible de cada clase de equivalencia y la
-  distribución global del conjunto.
+- Cálculo de la Earth Mover's Distance con métrica Equal (equivalente a la
+  mitad de la distancia L1) entre la distribución del atributo sensible de
+  cada clase de equivalencia y la distribución global del conjunto.
 
-Las nueve configuraciones se exportan manualmente desde ARX Desktop con
-el atributo `diag_1_category` marcado como Sensitive y los QIDs
-idénticos a la fase de k-anonimidad. Esta utilidad asume que los CSV
-están en el directorio configurado en `src.config.DATA_DIR`.
+Las configuraciones se exportan manualmente desde ARX Desktop con el
+atributo sensible (`config.SENSITIVE_ATTRIBUTE`) marcado como Sensitive y
+los QIDs idénticos a la fase de k-anonimidad. Esta utilidad asume que los
+CSV están en `config.ARX_OUTPUTS_DIR`.
 """
 
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, f1_score
 from sklearn.preprocessing import StandardScaler
 
-from src import config
-from src.models import build_baseline_models
-from src.preprocessing import binarize_target, joint_ohe
-
-
-SENSITIVE_ATTRIBUTE = "diag_1_category"
+from tfm import config
+from tfm.arx_io import load_arx_arrays, read_arx_csv
+from tfm.models import build_baseline_models
+from tfm.preprocessing import binarize_target, joint_ohe
 
 
 def _global_sa_distribution(df_train_raw: pd.DataFrame) -> pd.Series:
     """Distribución de la SA en el conjunto de entrenamiento sin anonimizar."""
-    return df_train_raw[SENSITIVE_ATTRIBUTE].value_counts(normalize=True)
-
-
-def emd_equal_distance(p: np.ndarray, q: np.ndarray) -> float:
-    """EMD bajo Equal Distance metric = mitad de la distancia L1.
-
-    Para dos distribuciones de probabilidad sobre el mismo soporte, la
-    EMD con costes uniformes (cualquier par de categorías distintas tiene
-    distancia 1) se reduce a la Total Variation Distance.
-    """
-    return float(0.5 * np.abs(p - q).sum())
+    return df_train_raw[config.SENSITIVE_ATTRIBUTE].value_counts(normalize=True)
 
 
 def verify_constraints(
@@ -57,10 +46,7 @@ def verify_constraints(
     Devuelve un diccionario con métricas estructurales (clases de equivalencia,
     supresión, l-diversidad observada y EMD máxima) y los flags de cumplimiento.
     """
-    df_anon = pd.read_csv(filepath, sep=";")
-    n_initial = len(df_anon)
-    mask_sup = df_anon["race"].astype(str).str.fullmatch(r"\*")
-    df_clean = df_anon[~mask_sup].copy()
+    df_clean, n_initial = read_arx_csv(filepath)
     suppression = (n_initial - len(df_clean)) / n_initial * 100
 
     global_dist = _global_sa_distribution(df_train_raw)
@@ -68,7 +54,7 @@ def verify_constraints(
     g = np.array([global_dist.get(c, 0.0) for c in sa_cats])
 
     df_clean["_eq_class"] = df_clean[qid_columns].astype(str).agg("|".join, axis=1)
-    crosstab = pd.crosstab(df_clean["_eq_class"], df_clean[SENSITIVE_ATTRIBUTE])
+    crosstab = pd.crosstab(df_clean["_eq_class"], df_clean[config.SENSITIVE_ATTRIBUTE])
     for category in sa_cats:
         if category not in crosstab.columns:
             crosstab[category] = 0
@@ -113,34 +99,21 @@ def evaluate_ldiv_tclos(
     Mantiene la misma interfaz que `kanon.evaluate_kanon` para que las funciones
     de plotting puedan reutilizarse.
     """
-    df_anon = pd.read_csv(filepath_anon, sep=";")
-    n_initial = len(df_anon)
-    mask_sup = df_anon["race"].astype(str).str.fullmatch(r"\*")
-    df_anon = df_anon[~mask_sup].copy()
-    suppression_pct = (n_initial - len(df_anon)) / n_initial * 100
-
-    y_anon = binarize_target(df_anon[config.TARGET_COLUMN]).values
-    X_anon = df_anon.drop(columns=[config.TARGET_COLUMN])
-    X_test = df_test_raw.drop(columns=[config.TARGET_COLUMN])
-
-    X_anon_array, X_test_array = joint_ohe(X_anon, X_test)
-    scaler = StandardScaler().fit(X_anon_array)
-    X_anon_s = scaler.transform(X_anon_array)
-    X_test_s = scaler.transform(X_test_array)
+    arrays = load_arx_arrays(filepath_anon, df_test_raw)
     y_test = binarize_target(df_test_raw[config.TARGET_COLUMN]).values
 
     rows: List[Dict] = []
     for name, model in build_baseline_models().items():
-        model.fit(X_anon_s, y_anon)
-        preds = model.predict(X_test_s)
+        model.fit(arrays.X_anon_scaled, arrays.y_anon)
+        preds = model.predict(arrays.X_test_scaled)
         rows.append({
             **tag,
             "Modelo": name,
             "Accuracy": accuracy_score(y_test, preds),
             "F1-Score": f1_score(y_test, preds, average="weighted"),
-            "pct_suprimido": round(suppression_pct, 2),
-            "filas_efectivas": len(df_anon),
-            "columnas_OHE": X_anon_array.shape[1],
+            "pct_suprimido": round(arrays.suppression_pct, 2),
+            "filas_efectivas": arrays.n_rows,
+            "columnas_OHE": arrays.n_ohe_columns,
         })
     return pd.DataFrame(rows)
 
@@ -157,13 +130,10 @@ def fairness_ldiv_tclos(
     Si `filepath_anon` es None se utiliza el conjunto de entrenamiento sin
     anonimizar (referencia baseline).
     """
-    from sklearn.linear_model import LogisticRegression
-
     if filepath_anon is None:
         df_train = df_train_raw.copy()
     else:
-        df_train = pd.read_csv(filepath_anon, sep=";")
-        df_train = df_train[~df_train["race"].astype(str).str.fullmatch(r"\*")].copy()
+        df_train, _ = read_arx_csv(filepath_anon)
 
     y_train = binarize_target(df_train[config.TARGET_COLUMN]).values
     X_train = df_train.drop(columns=[config.TARGET_COLUMN])

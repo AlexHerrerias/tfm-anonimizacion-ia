@@ -2,21 +2,18 @@
 
 Genera arx_kit/inputs/arx_train.csv, arx_kit/inputs/arx_test.csv y los
 cinco archivos de jerarquía en arx_kit/inputs/arx_hierarchies/. El paso
-de anonimización se realiza manualmente en ARX Desktop según la guía
-descrita en la memoria; los CSV resultantes deben guardarse en
+de anonimización se realiza manualmente en ARX Desktop según
+docs/guia_arx.md; los CSV resultantes deben guardarse en
 arx_kit/arx_outputs/.
-
-Uso:
-    python scripts/02_export_arx.py
 """
 
-from src import config
-from src.data_loader import load_clean_reduced
-from src.kanon import export_for_arx, export_hierarchies
-from src.preprocessing import stratified_split
+from tfm import config
+from tfm.data_loader import load_clean_reduced
+from tfm.kanon import export_for_arx, export_hierarchies
+from tfm.preprocessing import stratified_split
 
 
-def main() -> None:
+def run() -> None:
     df = load_clean_reduced()
     X_train, X_test, _, _ = stratified_split(df)
 
@@ -36,4 +33,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    run()

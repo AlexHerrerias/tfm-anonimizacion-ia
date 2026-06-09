@@ -2,13 +2,14 @@
 
 Esta guía resume el procedimiento manual para producir las cinco versiones
 anonimizadas (`arx_output_k2.csv`, `arx_output_k5.csv`, …, `arx_output_k50.csv`)
-que el notebook `TFM_v3.ipynb` consume después en la sección 10.
+que la fase 3 del pipeline (`tfm run 03`) consume después.
 
 ---
 
 ## 0 · Preparación
 
-1. Comprueba que tienes los archivos generados por el notebook (sección 6 y 7):
+1. Comprueba que tienes los archivos generados por la fase 2 (`tfm run 02`)
+   en `arx_kit/inputs/`:
    - `arx_train.csv` (78.442 filas, separador `;`)
    - `arx_test.csv` (19.611 filas, separador `;`) — no se anonimiza
    - `arx_hierarchies/race.csv`
@@ -124,13 +125,12 @@ Repite los pasos 3 → 6 cambiando solo el valor de **k**:
 
 ---
 
-## 8 · Subir resultados a Colab
+## 8 · Colocar los resultados y evaluar
 
-1. Sube los cinco archivos `arx_output_k*.csv` a la misma carpeta de Colab
-   donde tienes `arx_train.csv` y `arx_test.csv`.
-2. En el notebook `TFM_v3.ipynb`, ejecuta la sección **10**: el loop detecta
-   automáticamente los archivos disponibles y produce la tabla de
-   degradación + las figuras `comparativa_kanon.png` y `fairness_kanon.png`.
+1. Guarda los cinco archivos `arx_output_k*.csv` en `arx_kit/arx_outputs/`.
+2. Ejecuta `tfm run 03`: el loop detecta automáticamente los archivos
+   disponibles y produce la tabla de degradación + las figuras
+   `comparativa_kanon.png` y `fairness_kanon.png`.
 
 ---
 
@@ -145,7 +145,7 @@ Para cada k, anota desde la pestaña **Analyze utility / Risk** de ARX:
   ser 0 si k se cumple estrictamente).
 
 Estas métricas son las que rellenan la tabla del Capítulo 4 (Resultados)
-junto con las accuracies/F1 que produce el notebook.
+junto con las accuracies/F1 que produce el pipeline.
 
 ---
 

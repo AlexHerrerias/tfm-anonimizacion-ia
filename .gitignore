@@ -23,6 +23,9 @@ results/*.csv
 results/*.png
 *.log
 
+# Caché local del dataset UCI (regenerable: se descarga en la primera ejecución)
+data_cache/
+
 # Datasets de ARX: SE VERSIONAN para que el notebook en Colab funcione
 # end-to-end sin necesidad de ejecutar ARX Desktop manualmente.
 # Si vuelves a excluirlos, descomenta:

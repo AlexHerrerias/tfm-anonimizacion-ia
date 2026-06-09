@@ -1,21 +1,18 @@
 """Fase 10 — Figuras de la extensión l-diversidad / t-closeness.
 
 Genera las cuatro figuras consumidas por el Capítulo 4 a partir de los CSVs
-producidos por las fases 8 (evaluación + fairness) y 9 (MIA):
+producidos por la fase 8 (evaluación + fairness):
 
     comparativa_ldiv.png       — Accuracy y F1 vs l (k=5 fijo)
     comparativa_tclos.png      — Accuracy y F1 vs t (k=5 fijo)
     triples_vs_singles.png     — Validación empírica de Li et al. 2007
     fairness_ldiv_tclos.png    — Equidad por subgrupo race (l-div y t-clos)
-
-Uso:
-    python scripts/10_plots_ldiv_tclos.py
 """
 
 import pandas as pd
 
-from src import config
-from src.plotting import (
+from tfm import config
+from tfm.plotting import (
     plot_fairness_ldiv_tclos,
     plot_ldiv_degradation,
     plot_tclos_degradation,
@@ -23,12 +20,14 @@ from src.plotting import (
 )
 
 
-def main() -> None:
+def run() -> None:
+    config.ensure_dirs()
+
     results_csv = config.RESULTS_LDIV_TCLOS_DIR / "resultados_ldiv_tclos.csv"
     fairness_csv = config.RESULTS_LDIV_TCLOS_DIR / "fairness_ldiv_tclos.csv"
     if not results_csv.exists() or not fairness_csv.exists():
         raise FileNotFoundError(
-            "Ejecuta primero scripts/08_eval_ldiv_tclos.py para producir los CSVs."
+            "Ejecuta primero `tfm run 08` para producir los CSVs."
         )
 
     df_results = pd.read_csv(results_csv)
@@ -58,4 +57,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    run()

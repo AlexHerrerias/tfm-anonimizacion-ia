@@ -8,8 +8,9 @@ arx_kit/
 │   ├── arx_train.csv                # 78.442 registros para anonimizar
 │   ├── arx_test.csv                 # 19.611 registros en claro (test set)
 │   ├── arx_hierarchies/             # Jerarquías de generalización por QID
-│   ├── GUIA_ARX_PASO_A_PASO.md      # Procedimiento manual de la GUI
+│   ├── tfm-arx.deid                 # Proyecto ARX de ejemplo
 │   └── tfm-arx_k2.deid              # Proyecto ARX guardado (k=2 ejemplo)
+│       (procedimiento manual de la GUI: docs/guia_arx.md)
 │
 ├── arx_outputs/                     # CSVs anonimizados exportados desde ARX
 │   ├── arx_output_k{2,5,10,25,50}.csv             # k-anonimidad pura
@@ -17,24 +18,28 @@ arx_kit/
 │   ├── arx_output_k5_t{02,025,03,035,04,05}.csv   # t-closeness sobre k=5
 │   └── arx_output_k5_l*_t*.csv                    # Combinaciones triples
 │
-└── results/                         # Outputs de experimentos Python
+└── results/                         # Outputs del pipeline Python (tfm run …)
     ├── kanon/                       # Fase ARX (k-anonimidad)
-    │   ├── resultados_kanon.csv
-    │   ├── fairness_kanon.csv
-    │   └── mcnemar_kanon.csv
+    │   ├── perfil_privacidad.csv    #   Fase 0 — riesgo basal de reidentificación
+    │   ├── baseline.csv             #   Fase 1
+    │   ├── resultados_kanon.csv     #   Fase 3
+    │   ├── fairness_kanon.csv       #   Fase 3
+    │   ├── loss_disparity_kanon.csv #   Fase 3
+    │   └── mcnemar_kanon.csv        #   Fase 7
     ├── dp/                          # Fase Privacidad Diferencial (n=20)
-    │   ├── resultados_dp.csv
-    │   ├── resultados_combo.csv
-    │   ├── fairness_dp.csv
-    │   ├── fairness_combo.csv
-    │   └── wilcoxon_dp.csv
+    │   ├── resultados_dp.csv        #   Fase 4
+    │   ├── fairness_dp.csv          #   Fase 4
+    │   ├── resultados_combo.csv     #   Fase 5
+    │   ├── fairness_combo.csv       #   (generado por el notebook v3; sin script que lo regenere)
+    │   └── wilcoxon_dp.csv          #   Fase 7
     ├── ldiv_tclos/                  # Extensión l-diversidad / t-closeness
-    │   ├── resultados_ldiv_tclos.csv
-    │   ├── fairness_ldiv_tclos.csv
-    │   └── mcnemar_ldiv_tclos.csv
+    │   ├── resultados_ldiv_tclos.csv    # Fase 8
+    │   ├── fairness_ldiv_tclos.csv      # Fase 8
+    │   ├── verificacion_ldiv_tclos.csv  # Fase 8
+    │   └── mcnemar_ldiv_tclos.csv       # Fase 11
     └── mia/                         # Auditoría MIA Black-Box
-        ├── mia_results.csv
-        └── mia_ldiv_tclos.csv
+        ├── mia_results.csv          #   Fase 6
+        └── mia_ldiv_tclos.csv       #   Fase 9
 ```
 
 ## Convención de nombres

@@ -8,7 +8,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
-from src import config
+from tfm import config
 
 
 def load_baselines(csv_path: Path = None) -> Dict[str, Tuple[float, float]]:
@@ -20,14 +20,14 @@ def load_baselines(csv_path: Path = None) -> Dict[str, Tuple[float, float]]:
     mensaje claro.
 
     Esta función centraliza el acceso a los baselines y evita que los
-    valores aparezcan hardcoded en múltiples scripts.
+    valores aparezcan hardcoded en múltiples fases.
     """
     if csv_path is None:
         csv_path = config.RESULTS_KANON_DIR / "resultados_kanon.csv"
     csv_path = Path(csv_path)
     if not csv_path.exists():
         raise FileNotFoundError(
-            f"No se encuentra {csv_path}. Ejecuta primero `python scripts/03_evaluate_kanon.py` "
+            f"No se encuentra {csv_path}. Ejecuta primero `tfm run 03` "
             "para generar los baselines."
         )
     df = pd.read_csv(csv_path)
@@ -63,38 +63,28 @@ def stratified_split(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame, pd.S
     )
 
 
+def raw_frames_from_split(
+    df: pd.DataFrame, train_index, test_index, coerce_qids: bool = True
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Devuelve (df_train_raw, df_test_raw) alineados con `stratified_split`.
+
+    Reconstruye los DataFrames originales (sin OHE) de train y test a partir
+    de los índices del split estratificado. Si `coerce_qids` es True, los
+    QIDs numéricos se convierten a string (formato que exportan las
+    jerarquías de ARX, necesario para el OHE conjunto con CSVs anonimizados).
+    """
+    df_train_raw = df.loc[train_index].copy()
+    df_test_raw = df.loc[test_index].copy()
+    if coerce_qids:
+        for column in config.QID_NUMERIC_AS_STR:
+            df_train_raw[column] = df_train_raw[column].astype(str)
+            df_test_raw[column] = df_test_raw[column].astype(str)
+    return df_train_raw, df_test_raw
+
+
 def fit_scaler(X_train: pd.DataFrame) -> StandardScaler:
     """Ajusta un StandardScaler sobre el conjunto de entrenamiento."""
     return StandardScaler().fit(X_train)
-
-
-def mask_suppressed_rows(df: pd.DataFrame, qids: list = None) -> pd.Series:
-    """Identifica las filas suprimidas por ARX.
-
-    ARX exporta los registros suprimidos con todos los QID a `*`
-    (generalización máxima compartida con la operación de supresión
-    explícita). Esta función comprueba que TODOS los QIDs estén a `*`,
-    en lugar de mirar sólo `race` como hace la heurística histórica.
-
-    Empíricamente, sobre los CSVs de este TFM, la heurística "race==*"
-    coincide al 100\\% con esta verificación más completa (la jerarquía
-    de `race` sólo alcanza `*` en el nivel máximo, que es justamente el
-    nivel de supresión); pero al verificar todas las QIDs el código
-    queda blindado frente a futuros cambios en las jerarquías.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Conjunto exportado por ARX (separador `;`).
-    qids : list, optional
-        Lista de columnas QID a comprobar. Si es None se usa el conjunto
-        canónico del TFM (race, gender, age, admission_type_id,
-        time_in_hospital).
-    """
-    if qids is None:
-        qids = ["race", "gender", "age", "admission_type_id", "time_in_hospital"]
-    available = [c for c in qids if c in df.columns]
-    return df[available].astype(str).eq("*").all(axis=1)
 
 
 def joint_ohe(X_anon: pd.DataFrame, X_test_raw: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
