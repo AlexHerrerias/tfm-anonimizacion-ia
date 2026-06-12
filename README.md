@@ -25,6 +25,7 @@ adversarial mediante MIA (`adversarial-robustness-toolbox`).
 │   ├── kanon.py               Soporte ARX (exportar CSV, jerarquías, evaluar)
 │   ├── ldiv_tclos.py          l-diversidad, t-closeness y triples (k+l+t)
 │   ├── differential_privacy.py  Sweep ε y combinación k+DP
+│   ├── local_dp.py            Privacidad Diferencial Local (k-RR + Laplace)
 │   ├── fairness.py            Disparidad por subgrupo race
 │   ├── statistical_tests.py   McNemar y Wilcoxon (con Bonferroni)
 │   ├── mia.py                 Membership Inference Attack Black-Box
@@ -56,7 +57,7 @@ pipeline al raíz del repositorio. Ya no es necesario exportar `PYTHONPATH`.
 
 ## Ejecución del pipeline
 
-El pipeline se compone de **doce fases** (00–11). Lista de fases:
+El pipeline se compone de **trece fases** (00–12). Lista de fases:
 
 ```bash
 tfm list
@@ -65,7 +66,7 @@ tfm list
 Ejecución completa o por fases:
 
 ```bash
-tfm run all          # las doce fases en secuencia
+tfm run all          # las trece fases en secuencia
 tfm run 04           # una fase concreta
 tfm run 08 09 10 11  # varias fases en orden
 ```
@@ -85,6 +86,7 @@ tfm run 08 09 10 11  # varias fases en orden
 | 09 | MIA sobre configuraciones l/t estrictas | `mia_ldiv_tclos.csv` |
 | 10 | Figuras de la extensión l/t | 4 PNG en `results/` |
 | 11 | McNemar sobre 4 configuraciones l/t extremas | `mcnemar_ldiv_tclos.csv` |
+| 12 | Barrido de Privacidad Diferencial **Local** (LDP, ε × 20 reps) | `resultados_ldp.csv`, `fairness_ldp.csv`, `wilcoxon_ldp.csv` |
 
 Los CSVs de resultados se guardan bajo `arx_kit/results/` y las figuras PNG
 en `results/`; los nombres coinciden con los referenciados desde la memoria.

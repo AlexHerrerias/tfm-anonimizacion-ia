@@ -1,0 +1,14 @@
+filepath,n_filas,suppression_pct,n_classes,size_min,size_median,l_min_observed,l_median_observed,emd_max,k_satisfied,l_satisfied,t_satisfied
+arx_output_k5.csv,76975,1.87,888,5,21,1,7,0.9179,True,,
+arx_output_k5_l2.csv,76956,1.89,885,5,21,2,7,0.849,True,True,
+arx_output_k5_l3.csv,76819,2.07,866,5,22,3,7,0.7929,True,True,
+arx_output_k5_l5.csv,75432,3.84,680,5,37,5,8,0.6956,True,True,
+arx_output_k5_t05.csv,75036,4.34,720,5,31,3,8,0.4993,True,,True
+arx_output_k5_t04.csv,72395,7.71,599,5,46,3,8,0.3981,True,,True
+arx_output_k5_t035.csv,70512,10.11,517,5,58,4,9,0.3497,True,,True
+arx_output_k5_t03.csv,72048,8.15,239,6,90,4,9,0.2989,True,,True
+arx_output_k5_t025.csv,71624,8.69,220,6,120,5,9,0.2478,True,,True
+arx_output_k5_l2_t05.csv,75036,4.34,720,5,31,3,8,0.4993,True,True,True
+arx_output_k5_l3_t035.csv,70512,10.11,517,5,58,4,9,0.3497,True,True,True
+arx_output_k5_l5_t03.csv,72042,8.16,238,6,93,5,9,0.2989,True,True,True
+arx_output_k5_l5_t025.csv,71624,8.69,220,6,120,5,9,0.2478,True,True,True

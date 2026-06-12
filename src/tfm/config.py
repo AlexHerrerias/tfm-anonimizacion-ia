@@ -22,6 +22,7 @@ RESULTS_KANON_DIR = DATA_DIR / "results" / "kanon"
 RESULTS_DP_DIR = DATA_DIR / "results" / "dp"
 RESULTS_LDIV_TCLOS_DIR = DATA_DIR / "results" / "ldiv_tclos"
 RESULTS_MIA_DIR = DATA_DIR / "results" / "mia"
+RESULTS_LDP_DIR = DATA_DIR / "results" / "ldp"
 
 # Figuras (PNG) consumidas por la memoria
 RESULTS_DIR = ROOT / "results"
@@ -39,6 +40,7 @@ def ensure_dirs() -> None:
         RESULTS_DP_DIR,
         RESULTS_LDIV_TCLOS_DIR,
         RESULTS_MIA_DIR,
+        RESULTS_LDP_DIR,
     ):
         directory.mkdir(parents=True, exist_ok=True)
 
@@ -63,6 +65,31 @@ DP_SEEDS = [42, 137, 271, 314, 1729, 2718, 3141, 6022, 8128, 9999,
 L_VALUES = [2, 3, 5]
 T_VALUES = [0.5, 0.4, 0.35, 0.3, 0.25]
 SENSITIVE_ATTRIBUTE = "diag_1_category"
+
+# Privacidad Diferencial Local (Fase 12).
+#
+# El presupuesto es POR REGISTRO (user-level): se reparte uniformemente entre
+# los atributos perturbables mediante composición secuencial (ε_j = ε / n_eff).
+# Los cinco primeros valores replican EPSILON_VALUES para la comparativa
+# directa con la DP global; la cola extendida {20, 50, 100, 200} explora a
+# partir de qué presupuesto —ya sin valor protector real— la utilidad
+# comienza a recuperarse, localizando la frontera empírica de viabilidad
+# de la LDP sobre este dataset (n ≈ 78k, 45 atributos).
+#
+# Lectura alternativa "por atributo" (práctica industrial tipo RAPPOR/Apple):
+# equivale a reparametrizar el eje, ε_atributo = ε_registro / n_eff; no
+# requiere experimento aparte y se discute como tal en la memoria.
+LDP_EPSILON_VALUES = [0.1, 0.5, 1.0, 5.0, 10.0, 20.0, 50.0, 100.0, 200.0]
+
+# Columnas con código entero pero semántica nominal (catálogos administrativos
+# del data dictionary IDS_mapping): se perturban con k-RR sobre su dominio
+# observado, aunque para el modelo sigan entrando como variables numéricas
+# (mismo tratamiento de columna que en baseline/DP global → column space 121).
+LDP_NOMINAL_INT_COLUMNS = (
+    "admission_type_id",
+    "discharge_disposition_id",
+    "admission_source_id",
+)
 
 
 def arx_output_filename(k: int, l: int = None, t: float = None) -> str:
