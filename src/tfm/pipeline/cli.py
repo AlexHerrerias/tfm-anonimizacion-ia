@@ -19,6 +19,7 @@ PHASES = {
     "09": ("tfm.pipeline.phase09_mia_ldiv_tclos", "MIA sobre configuraciones l/t estrictas"),
     "10": ("tfm.pipeline.phase10_plots_ldiv_tclos", "Figuras de la extensión l/t"),
     "11": ("tfm.pipeline.phase11_mcnemar_ldiv_tclos", "McNemar sobre configuraciones l/t extremas"),
+    "12": ("tfm.pipeline.phase12_ldp_sweep", "Barrido de Privacidad Diferencial Local (LDP, ε × 20 reps)"),
 }
 
 # La Fase 2 termina en un paso manual (ARX Desktop). Tras ejecutarla, las

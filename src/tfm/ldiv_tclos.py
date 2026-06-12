@@ -73,7 +73,9 @@ def verify_constraints(
     )
 
     return {
-        "filepath": str(filepath),
+        # Solo el nombre del archivo: el CSV de verificación se versiona y no
+        # debe contener rutas absolutas dependientes de la máquina.
+        "filepath": Path(filepath).name,
         "n_filas": int(len(df_clean)),
         "suppression_pct": round(float(suppression), 2),
         "n_classes": int(len(crosstab)),
