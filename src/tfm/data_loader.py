@@ -7,33 +7,22 @@ from ucimlrepo import fetch_ucirepo
 from tfm import config
 
 
-def load_raw_dataset(use_cache: bool = True) -> pd.DataFrame:
-    """Descarga el dataset original desde el repositorio UCI.
-
-    La primera ejecución descarga por red y guarda una caché local en
-    formato pickle (preserva los dtypes exactos que produce el lector de
-    ucimlrepo). Las ejecuciones siguientes leen la caché y no requieren
-    conexión. Borrar `data_cache/` fuerza una nueva descarga.
-    """
-    if use_cache and config.UCI_CACHE_FILE.exists():
+def load_raw_dataset() -> pd.DataFrame:
+    """Descarga el dataset UCI con caché local en pickle; borrar
+    `data_cache/` fuerza una nueva descarga."""
+    if config.UCI_CACHE_FILE.exists():
         return pd.read_pickle(config.UCI_CACHE_FILE)
 
     dataset = fetch_ucirepo(id=config.DATASET_ID)
     df = pd.concat([dataset.data.features, dataset.data.targets], axis=1)
-
-    if use_cache:
-        config.CACHE_DIR.mkdir(parents=True, exist_ok=True)
-        df.to_pickle(config.UCI_CACHE_FILE)
+    config.CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    df.to_pickle(config.UCI_CACHE_FILE)
     return df
 
 
 def clean_dataset(df: pd.DataFrame) -> pd.DataFrame:
-    """Aplica las tres estrategias de preprocesamiento descritas en la memoria.
-
-    1. Suprime la columna `weight` (96,85 % de nulos).
-    2. Imputa con la categoría 'No_Registrado' los nulos clínicos semánticos.
-    3. Elimina filas con nulos residuales preservando la variable `race`.
-    """
+    """Limpieza de la memoria: suprime `weight` (96,85 % nulos), imputa
+    'No_Registrado' en nulos clínicos y elimina filas con nulos residuales."""
     df = df.copy()
     df.replace("?", np.nan, inplace=True)
     df.drop(columns=["weight"], inplace=True)
@@ -73,12 +62,8 @@ def map_diagnosis(code) -> str:
 
 
 def reduce_diagnoses(df: pd.DataFrame) -> pd.DataFrame:
-    """Reduce los códigos CIE-9 originales a 9 macrocategorías médicas.
-
-    Esta agrupación semántica reduce el espacio One-Hot Encoding
-    de 2.405 a 121 dimensiones, condición previa para la aplicación
-    de Privacidad Diferencial sin colapso de utilidad.
-    """
+    """Agrupa los códigos CIE-9 en 9 macrocategorías (OHE de 2.405 a 121
+    dimensiones, condición previa para la Privacidad Diferencial)."""
     df = df.copy()
     for column in ("diag_1", "diag_2", "diag_3"):
         df[f"{column}_category"] = df[column].apply(map_diagnosis)
@@ -91,3 +76,56 @@ def load_clean_reduced() -> pd.DataFrame:
     df = clean_dataset(df)
     df = reduce_diagnoses(df)
     return df
+
+
+def load_split_frames(verbose: bool = True):
+    """Devuelve (df_train_raw, df_test_raw) del split canónico; sin acceso a
+    UCI/caché lo reconstruye desde arx_kit/inputs (mismas filas, orden y
+    dtypes que el canónico). Los QID numéricos se devuelven sin coercionar."""
+    from tfm.preprocessing import stratified_split
+
+    try:
+        df = load_clean_reduced()
+        X_train, X_test, _, _ = stratified_split(df)
+        if verbose:
+            print("Datos: split canónico (UCI/caché local).")
+        return df.loc[X_train.index].copy(), df.loc[X_test.index].copy()
+    except Exception as exc:  # sin red ni caché → reconstrucción
+        train_path = config.INPUTS_DIR / "arx_train.csv"
+        test_path = config.INPUTS_DIR / "arx_test.csv"
+        if not (train_path.exists() and test_path.exists()):
+            raise RuntimeError(
+                "Sin acceso a UCI/caché y sin arx_kit/inputs para reconstruir "
+                f"el split (causa original: {exc})"
+            ) from exc
+        if verbose:
+            print(f"Datos: split reconstruido desde {config.INPUTS_DIR} "
+                  f"(UCI no disponible: {type(exc).__name__}).")
+
+        def _read_auto_sep(path):
+            # arx_train.csv usa ';' (formato ARX); arx_test.csv histórico
+            # usa ','. Se detecta por la cabecera para tolerar ambos.
+            with open(path, encoding="utf-8") as handle:
+                header = handle.readline()
+            return pd.read_csv(path, sep=";" if ";" in header else ",")
+
+        return _read_auto_sep(train_path), _read_auto_sep(test_path)
+
+
+def encoded_split_from_frames(df_train_raw: pd.DataFrame, df_test_raw: pd.DataFrame):
+    """Reproduce las matrices de `stratified_split` desde los crudos: el OHE
+    conjunto no depende del orden de filas, así que el column space es
+    idéntico al canónico. Devuelve (X_train, X_test, y_train, y_test)."""
+    from tfm.preprocessing import binarize_target
+
+    y_train = binarize_target(df_train_raw[config.TARGET_COLUMN])
+    y_test = binarize_target(df_test_raw[config.TARGET_COLUMN])
+
+    n_train = len(df_train_raw)
+    stacked = pd.concat(
+        [df_train_raw.drop(columns=[config.TARGET_COLUMN]),
+         df_test_raw.drop(columns=[config.TARGET_COLUMN])],
+        ignore_index=True,
+    )
+    encoded = pd.get_dummies(stacked, drop_first=True)
+    return encoded.iloc[:n_train], encoded.iloc[n_train:], y_train, y_test

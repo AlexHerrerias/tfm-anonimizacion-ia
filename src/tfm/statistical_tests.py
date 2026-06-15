@@ -9,11 +9,8 @@ from scipy.stats import wilcoxon
 
 
 def mcnemar_test(y_true: np.ndarray, predictions_a: np.ndarray, predictions_b: np.ndarray) -> Tuple[float, int, int, float]:
-    """Test de McNemar con corrección de continuidad de Edwards.
-
-    Devuelve (p_value, b, c, chi_squared) donde b cuenta los casos en
-    los que el primer clasificador acierta y el segundo falla, y c
-    los inversos.
+    """McNemar con corrección de continuidad de Edwards; devuelve (p_value, b, c,
+    chi_squared), con b = acierta el primero y falla el segundo, c = el inverso.
     """
     correct_a = (predictions_a == y_true)
     correct_b = (predictions_b == y_true)
@@ -27,10 +24,8 @@ def mcnemar_test(y_true: np.ndarray, predictions_a: np.ndarray, predictions_b: n
 
 
 def wilcoxon_one_sample(values: np.ndarray, reference: float) -> Tuple[float, float]:
-    """Test de Wilcoxon de una muestra frente a una constante de referencia.
-
-    Devuelve (statistic, p_value). Con n=20 (configuración del TFM) el menor
-    p alcanzable a dos colas ronda 1,9 x 10^-6.
+    """Wilcoxon de una muestra frente a una constante; devuelve (statistic, p_value).
+    Con n=20, el menor p alcanzable a dos colas ronda 1,9 x 10^-6.
     """
     diffs = np.asarray(values) - reference
     try:
@@ -41,15 +36,8 @@ def wilcoxon_one_sample(values: np.ndarray, reference: float) -> Tuple[float, fl
 
 
 def apply_bonferroni(df: pd.DataFrame, alpha: float = 0.05) -> pd.DataFrame:
-    """Añade columnas de corrección Bonferroni a una tabla de tests.
-
-    Devuelve una copia del DataFrame con dos columnas adicionales:
-      * `p_bonferroni`: p-valor ajustado (= p_value * N, capado a 1.0)
-      * `significativo_bonf`: True si p_bonferroni < alpha
-
-    N es el número de tests en la tabla. Esta corrección es conservadora
-    pero fácil de interpretar; alternativamente puede usarse Benjamini-Hochberg
-    para control de FDR cuando el número de tests es elevado.
+    """Devuelve una copia de la tabla con `p_bonferroni` (= p_value * N, capado
+    a 1.0) y `significativo_bonf`; N es el número de tests de la tabla.
     """
     df = df.copy()
     n_tests = len(df)
@@ -63,11 +51,7 @@ def build_mcnemar_table(
     anonymized_predictions: Dict[Tuple[str, int], np.ndarray],
     y_test: np.ndarray,
 ) -> pd.DataFrame:
-    """Construye la tabla completa de tests McNemar baseline vs (modelo, k).
-
-    Incluye la corrección Bonferroni sobre la familia completa de tests
-    (N = nº de filas) para controlar el error tipo I familywise.
-    """
+    """Tabla completa de McNemar baseline vs (modelo, k), con Bonferroni familywise."""
     rows: List[Dict] = []
     for (model_name, k_value), predictions in anonymized_predictions.items():
         p_value, b, c, chi_squared = mcnemar_test(

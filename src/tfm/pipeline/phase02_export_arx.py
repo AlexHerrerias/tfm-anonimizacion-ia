@@ -1,10 +1,6 @@
-"""Fase 2 — Exporta los CSVs y jerarquías para ARX Desktop.
-
-Genera arx_kit/inputs/arx_train.csv, arx_kit/inputs/arx_test.csv y los
-cinco archivos de jerarquía en arx_kit/inputs/arx_hierarchies/. El paso
-de anonimización se realiza manualmente en ARX Desktop según
-docs/guia_arx.md; los CSV resultantes deben guardarse en
-arx_kit/arx_outputs/.
+"""Fase 2 — Exporta CSVs y jerarquías a arx_kit/inputs/ para ARX Desktop.
+La anonimización es manual (docs/guia_arx.md) y sus CSV resultantes deben
+guardarse en arx_kit/arx_outputs/.
 """
 
 from tfm import config

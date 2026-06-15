@@ -1,16 +1,6 @@
-"""Operaciones de soporte para la extensión a l-diversidad y t-closeness.
-
-Reutiliza la lógica de evaluación de k-anonimidad y añade:
-- Verificación de las restricciones l-diversity / t-closeness sobre el CSV
-  exportado por ARX (post-hoc).
-- Cálculo de la Earth Mover's Distance con métrica Equal (equivalente a la
-  mitad de la distancia L1) entre la distribución del atributo sensible de
-  cada clase de equivalencia y la distribución global del conjunto.
-
-Las configuraciones se exportan manualmente desde ARX Desktop con el
-atributo sensible (`config.SENSITIVE_ATTRIBUTE`) marcado como Sensitive y
-los QIDs idénticos a la fase de k-anonimidad. Esta utilidad asume que los
-CSV están en `config.ARX_OUTPUTS_DIR`.
+"""Extensión a l-diversidad y t-closeness sobre CSVs exportados manualmente
+desde ARX Desktop: verificación post-hoc de restricciones (EMD Equal = L1/2)
+y evaluación reutilizando la lógica de k-anonimidad.
 """
 
 from pathlib import Path
@@ -41,10 +31,8 @@ def verify_constraints(
     expected_l: Optional[int] = None,
     expected_t: Optional[float] = None,
 ) -> Dict:
-    """Carga un CSV anonimizado y verifica las restricciones declaradas.
-
-    Devuelve un diccionario con métricas estructurales (clases de equivalencia,
-    supresión, l-diversidad observada y EMD máxima) y los flags de cumplimiento.
+    """Verifica las restricciones declaradas sobre un CSV anonimizado; devuelve
+    métricas estructurales (clases, supresión, l observada, EMD) y flags.
     """
     df_clean, n_initial = read_arx_csv(filepath)
     suppression = (n_initial - len(df_clean)) / n_initial * 100
@@ -73,8 +61,7 @@ def verify_constraints(
     )
 
     return {
-        # Solo el nombre del archivo: el CSV de verificación se versiona y no
-        # debe contener rutas absolutas dependientes de la máquina.
+        # Solo el nombre: el CSV de verificación se versiona sin rutas absolutas.
         "filepath": Path(filepath).name,
         "n_filas": int(len(df_clean)),
         "suppression_pct": round(float(suppression), 2),
@@ -95,11 +82,8 @@ def evaluate_ldiv_tclos(
     df_test_raw: pd.DataFrame,
     tag: Dict,
 ) -> pd.DataFrame:
-    """Entrena los modelos baseline sobre un CSV anonimizado y devuelve métricas.
-
-    `tag` debe contener al menos las claves: `k`, `l`, `t`, `tipo`, `archivo`.
-    Mantiene la misma interfaz que `kanon.evaluate_kanon` para que las funciones
-    de plotting puedan reutilizarse.
+    """Entrena los modelos baseline sobre un CSV anonimizado; `tag` aporta las claves
+    `k`, `l`, `t`, `tipo`, `archivo`. Misma interfaz que `kanon.evaluate_kanon`.
     """
     arrays = load_arx_arrays(filepath_anon, df_test_raw)
     y_test = binarize_target(df_test_raw[config.TARGET_COLUMN]).values
@@ -127,10 +111,8 @@ def fairness_ldiv_tclos(
     tag: Dict,
     min_subgroup_size: int = 10,
 ) -> pd.DataFrame:
-    """Calcula Accuracy de la Regresión Logística por subgrupo `race`.
-
-    Si `filepath_anon` es None se utiliza el conjunto de entrenamiento sin
-    anonimizar (referencia baseline).
+    """Accuracy de la Regresión Logística por subgrupo `race`; con
+    `filepath_anon=None` usa el train sin anonimizar (baseline).
     """
     if filepath_anon is None:
         df_train = df_train_raw.copy()

@@ -1,12 +1,6 @@
-"""Fase 10 — Figuras de la extensión l-diversidad / t-closeness.
-
-Genera las cuatro figuras consumidas por el Capítulo 4 a partir de los CSVs
-producidos por la fase 8 (evaluación + fairness):
-
-    comparativa_ldiv.png       — Accuracy y F1 vs l (k=5 fijo)
-    comparativa_tclos.png      — Accuracy y F1 vs t (k=5 fijo)
-    triples_vs_singles.png     — Validación empírica de Li et al. 2007
-    fairness_ldiv_tclos.png    — Equidad por subgrupo race (l-div y t-clos)
+"""Fase 10 — Figuras de la extensión l-diversidad / t-closeness a partir de los
+CSVs de la fase 8: comparativa_ldiv, comparativa_tclos, triples_vs_singles y
+fairness_ldiv_tclos (todas .png).
 """
 
 import pandas as pd

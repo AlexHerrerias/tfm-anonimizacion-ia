@@ -1,11 +1,6 @@
-"""Fase 8 — Evaluación de l-diversidad, t-closeness y combinaciones triples.
-
-Lee los CSVs anonimizados exportados manualmente desde ARX Desktop
-(con `diag_1_category` marcado como Sensitive y los mismos QIDs de la
-fase de k-anonimidad). Para cada configuración de `config.LT_CONFIGURATIONS`
-entrena los cuatro modelos baseline, calcula utilidad sobre el conjunto de
-test, equidad por subgrupos race y verifica las restricciones de privacidad
-declaradas.
+"""Fase 8 — Evaluación de l-diversidad, t-closeness y triples: por cada
+configuración de `config.LT_CONFIGURATIONS` entrena los cuatro modelos,
+calcula utilidad y equidad, y verifica las restricciones declaradas.
 """
 
 import pandas as pd

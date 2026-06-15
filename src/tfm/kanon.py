@@ -1,7 +1,5 @@
-"""Operaciones de soporte para la fase de k-anonimidad con ARX.
-
-Cubre la exportación de CSVs para ARX Desktop, la generación de las
-jerarquías de generalización y la evaluación post-anonimización.
+"""Soporte para k-anonimidad con ARX: exportación de CSVs, jerarquías
+de generalización y evaluación post-anonimización.
 """
 
 from pathlib import Path
@@ -68,10 +66,8 @@ def _time_in_hospital_hierarchy() -> str:
 
 
 def export_for_arx(df_reduced: pd.DataFrame, train_index, test_index, output_dir: Path) -> None:
-    """Exporta arx_train.csv y arx_test.csv con separador ';' coherente.
-
-    Convierte a string los QID numéricos para que ARX los trate como
-    categóricos al importar.
+    """Exporta arx_train.csv y arx_test.csv (separador ';'); los QID numéricos
+    se convierten a string para que ARX los importe como categóricos.
     """
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -104,10 +100,8 @@ def export_hierarchies(output_dir: Path) -> None:
 
 
 def evaluate_kanon(filepath_anon: Path, k_value: int, df_test_raw: pd.DataFrame) -> pd.DataFrame:
-    """Carga un CSV anonimizado por ARX y devuelve métricas de los 4 modelos.
-
-    Aplica OHE conjunto sobre [train_anon ∪ test_raw] para garantizar
-    un column space idéntico en entrenamiento y evaluación.
+    """Evalúa un CSV anonimizado por ARX con los 4 modelos; OHE conjunto
+    sobre [train_anon ∪ test_raw] para igualar el column space.
     """
     arrays = load_arx_arrays(filepath_anon, df_test_raw)
     y_test = binarize_target(df_test_raw[config.TARGET_COLUMN]).values

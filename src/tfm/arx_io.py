@@ -1,18 +1,6 @@
-"""Carga unificada de los CSVs anonimizados exportados por ARX Desktop.
-
-Centraliza el bloque común a todas las fases de evaluación: leer el CSV
-(sep=';'), eliminar las filas suprimidas, binarizar el target, aplicar el
-OHE conjunto con el test en claro y estandarizar.
-
-Semántica de supresión: ARX exporta los registros suprimidos con todos los
-QID a `*`. El detector activo es la heurística `race == '*'` (la jerarquía
-de `race` solo alcanza `*` en su nivel máximo, que coincide con la
-supresión), la misma con la que se calcularon los resultados de la memoria.
-`mask_suppressed_rows` implementa la verificación completa (todos los QIDs
-a `*`); sobre los CSVs de este TFM ambas coinciden al 100 %, pero la
-verificación completa queda blindada frente a futuros cambios en las
-jerarquías.
-"""
+"""Carga unificada de los CSVs anonimizados de ARX: lectura, retirada de
+filas suprimidas (detector `race == '*'`, el de los resultados de la
+memoria), binarización del target, OHE conjunto y estandarización."""
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -27,27 +15,12 @@ from tfm.preprocessing import binarize_target, joint_ohe
 
 
 def read_arx_csv(filepath: Path) -> Tuple[pd.DataFrame, int]:
-    """Lee un CSV exportado por ARX y elimina las filas suprimidas.
-
-    Devuelve (df_sin_suprimidas, n_filas_iniciales) para poder calcular
-    el porcentaje de supresión.
-    """
+    """Lee un CSV de ARX sin las filas suprimidas; devuelve también el número
+    inicial de filas para calcular el porcentaje de supresión."""
     df_anon = pd.read_csv(filepath, sep=";")
     n_initial = len(df_anon)
     mask_suppressed = df_anon["race"].astype(str).str.fullmatch(r"\*")
     return df_anon[~mask_suppressed].copy(), n_initial
-
-
-def mask_suppressed_rows(df: pd.DataFrame, qids: list = None) -> pd.Series:
-    """Detector de supresión completo: todos los QIDs a `*`.
-
-    Alternativa robusta a la heurística `race == '*'` usada por
-    `read_arx_csv`. Sobre los CSVs de este TFM ambas coinciden al 100 %.
-    """
-    if qids is None:
-        qids = config.QID_COLUMNS
-    available = [c for c in qids if c in df.columns]
-    return df[available].astype(str).eq("*").all(axis=1)
 
 
 @dataclass
@@ -67,15 +40,9 @@ def load_arx_arrays(
     df_test_raw: pd.DataFrame,
     dtype=None,
 ) -> ArxArrays:
-    """Pipeline completo CSV de ARX → matrices escaladas.
-
-    1. Lee el CSV (sep=';') y elimina filas suprimidas (`read_arx_csv`).
-    2. Binariza el target y separa features.
-    3. OHE conjunto [train_anon ∪ test_raw] para igualar el column space.
-    4. StandardScaler ajustado sobre el train anonimizado, aplicado a ambos.
-    5. Si `dtype` se especifica (p. ej. np.float32 para la auditoría MIA de
-       la Fase 9), castea las matrices después de escalar.
-    """
+    """CSV de ARX a matrices escaladas: filtra suprimidas, binariza el target,
+    OHE conjunto con `df_test_raw` y StandardScaler ajustado sobre el train
+    anonimizado; `dtype` castea tras escalar (p. ej. float32 en la Fase 9)."""
     df_anon, n_initial = read_arx_csv(filepath)
     suppression_pct = (n_initial - len(df_anon)) / n_initial * 100
 

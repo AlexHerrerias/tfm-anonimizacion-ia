@@ -1,7 +1,5 @@
-"""Fase 1 — Establece el baseline de utilidad sin privacidad.
-
-Entrena los cuatro modelos de referencia sobre el conjunto Diabetes 130-US
-hospitals y guarda las métricas en arx_kit/results/kanon/baseline.csv.
+"""Fase 1 — Baseline de utilidad sin privacidad con los cuatro modelos de
+referencia. Salida: arx_kit/results/kanon/baseline.csv
 """
 
 import pandas as pd

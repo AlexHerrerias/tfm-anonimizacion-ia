@@ -1,16 +1,6 @@
-"""Fase 9 — Auditoría MIA Black-Box sobre las configuraciones l-div / t-clos más estrictas.
-
-Audita los cuatro escenarios de `config.MIA_LT_TARGETS` sobre Regresión
-Logística (k=5 referencia, l=5, t=0.25 y triple Hard).
-
-Resultado: tabla mia_ldiv_tclos.csv con TPR, FPR y Advantage por configuración.
-
-Nota de reproducibilidad: se utiliza un RNG independiente por configuración
-(`np.random.default_rng(seed)`), con la semilla fijada explícitamente a
-partir de `config.DP_SEEDS` por índice de escenario. Esto elimina la
-dependencia del orden de las configuraciones que tenía la versión inicial
-basada en `np.random.seed` global, y permite añadir o reordenar
-configuraciones sin alterar los muestreos de las demás.
+"""Fase 9 — Auditoría MIA Black-Box sobre los escenarios de `config.MIA_LT_TARGETS`
+(LR; k=5 referencia, l=5, t=0.25 y triple Hard). RNG independiente por configuración,
+con semilla de `config.DP_SEEDS` por índice, para no depender del orden.
 """
 
 from typing import List

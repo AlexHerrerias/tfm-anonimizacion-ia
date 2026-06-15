@@ -1,15 +1,14 @@
-"""Fase 4 — Barrido de Privacidad Diferencial con diffprivlib.
-
-Ejecuta ε ∈ {0.1, 0.5, 1, 5, 10} con veinte repeticiones por punto
-(semillas dispersas, ver config.DP_SEEDS) sobre los modelos de
-Regresión Logística y Naive Bayes Gaussian.
+"""Fase 4 — Barrido DP con diffprivlib: ε ∈ {0.1, 0.5, 1, 5, 10}, veinte
+repeticiones por punto (config.DP_SEEDS), sobre LR y Naive Bayes Gaussian.
 """
+
+import pandas as pd
 
 from tfm import config
 from tfm.data_loader import load_clean_reduced
 from tfm.differential_privacy import sweep_dp
 from tfm.fairness import fairness_per_race_dp
-from tfm.plotting import plot_dp_degradation, plot_fairness_curves
+from tfm.plotting import plot_dp_degradation, plot_dp_vs_kanon, plot_fairness_curves
 from tfm.preprocessing import (
     fit_scaler,
     load_baselines,
@@ -55,6 +54,21 @@ def run() -> None:
         baselines=load_baselines(),
         output_path=config.RESULTS_DIR / "comparativa_dp.png",
     )
+
+    # Comparativa cruzada DP vs k-anonimidad (requiere la fase 3 ya ejecutada)
+    kanon_csv = config.RESULTS_KANON_DIR / "resultados_kanon.csv"
+    if kanon_csv.exists():
+        df_kanon = pd.read_csv(kanon_csv)
+        df_kanon_lr = df_kanon[df_kanon["Modelo"] == "Regresión Logística"][["k", "Accuracy"]]
+        baseline_acc = float(df_kanon_lr[df_kanon_lr["k"] == 0]["Accuracy"].iloc[0])
+        plot_dp_vs_kanon(
+            df_kanon_lr.sort_values("k"),
+            aggregated.loc["Regresión Logística"],
+            baseline_acc,
+            config.RESULTS_DIR / "comparativa_dp_vs_kanon.png",
+        )
+    else:
+        print("Aviso: sin resultados_kanon.csv; se omite comparativa_dp_vs_kanon.png")
 
     # Fairness por raza
     df_test_raw = df.loc[X_test.index].copy()

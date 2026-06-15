@@ -1,8 +1,5 @@
-"""Fase 7 — Tests de significancia estadística.
-
-Calcula los tests de McNemar para los modelos k-anonimizados y los
-tests de Wilcoxon de una muestra para los modelos diferencialmente
-privados.
+"""Fase 7 — Tests de significancia: McNemar para los modelos k-anonimizados
+y Wilcoxon de una muestra para los diferencialmente privados.
 """
 
 import pandas as pd
@@ -30,7 +27,6 @@ def run() -> None:
     X_test_scaled = scaler.transform(X_test)
     _, df_test_raw = raw_frames_from_split(df, X_train.index, X_test.index)
 
-    # Predicciones del baseline para cada modelo
     baseline_predictions = predict_baselines(X_train_scaled, X_test_scaled, y_train)
 
     # Predicciones por modelo y nivel de k

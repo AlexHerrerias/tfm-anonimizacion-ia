@@ -1,8 +1,5 @@
-"""Fase 3 — Evaluación post-ARX y análisis de equidad.
-
-Lee los CSVs anonimizados arx_output_k<k>.csv producidos manualmente
-en ARX Desktop, reentrena los modelos sobre cada versión y produce
-las tablas y figuras del Capítulo 4.
+"""Fase 3 — Evaluación post-ARX y equidad: reentrena los modelos sobre cada
+arx_output_k<k>.csv manual y genera las tablas y figuras correspondientes.
 """
 
 import pandas as pd
@@ -58,7 +55,7 @@ def run() -> None:
         title="Disparidad por subgrupo race a lo largo del barrido de k",
     )
 
-    # Loss Disparity por k (los valores se citan en la memoria)
+    # Loss Disparity por k
     df_disparity = loss_disparity_table(df_fairness, x_column="k")
     df_disparity.to_csv(config.RESULTS_KANON_DIR / "loss_disparity_kanon.csv", index=False)
     print("\nLoss Disparity por k:")

@@ -1,10 +1,6 @@
-"""Fase 11 — Test de McNemar sobre las configuraciones extremas de l-div / t-closeness.
-
-Replica la batería de tests McNemar de la Fase 7 sobre la selección de
-configuraciones de `config.MCNEMAR_LT_CONFIGURATIONS` (l=5, t=0.5, t=0.25 y
-triple Hard). El resto de configuraciones de la Fase 8 se omite por
-redundancia con singles ya testeados o por tener un efecto por debajo del
-umbral de detección útil.
+"""Fase 11 — McNemar sobre las configuraciones de `config.MCNEMAR_LT_CONFIGURATIONS`
+(l=5, t=0.5, t=0.25 y triple Hard), replicando la batería de la Fase 7; el resto
+se omite por redundancia o por efecto bajo el umbral de detección.
 """
 
 from typing import Dict, List
@@ -34,16 +30,13 @@ def run() -> None:
 
     df = load_clean_reduced()
     X_train, X_test, y_train, y_test = stratified_split(df)
-    # Baseline (k=0): mismo espacio de features que en las Fases 1 y 7 — OHE
-    # producido por stratified_split (admission_type_id/time_in_hospital como
-    # int) y StandardScaler ajustado sobre el train. Esto garantiza la
-    # coherencia con `resultados_kanon.csv` y con `tab:mcnemar`.
+    # Baseline (k=0) con el mismo espacio de features que las Fases 1 y 7,
+    # para mantener la coherencia con resultados_kanon.csv y tab:mcnemar.
     scaler = fit_scaler(X_train)
     X_train_scaled = scaler.transform(X_train)
     X_test_scaled = scaler.transform(X_test)
-    # df_test_raw: copia con admission_type_id/time_in_hospital convertidos a
-    # string, requerida por las jerarquías de ARX y por joint_ohe en las
-    # configuraciones anonimizadas (compatible con la Fase 7).
+    # df_test_raw lleva los QID numéricos como string, requisito de las
+    # jerarquías ARX y de joint_ohe (compatible con la Fase 7).
     _, df_test_raw = raw_frames_from_split(df, X_train.index, X_test.index)
     y_test_array = y_test.values
 
@@ -75,9 +68,8 @@ def run() -> None:
                 "significativo_005": p_value < 0.05,
             })
 
-    # Aplicamos Bonferroni sobre la familia completa de tests
-    # (N = nº de filas = 4 configuraciones × 4 modelos = 16) para mantener la
-    # coherencia con la batería de la Fase 7 (build_mcnemar_table).
+    # Bonferroni sobre la familia completa (N = 4 configuraciones x 4 modelos = 16),
+    # coherente con la batería de la Fase 7.
     df_results = apply_bonferroni(pd.DataFrame(rows))
     df_results.to_csv(config.RESULTS_LDIV_TCLOS_DIR / "mcnemar_ldiv_tclos.csv", index=False)
     print(f"\n✓ mcnemar_ldiv_tclos.csv guardado con {len(df_results)} filas")

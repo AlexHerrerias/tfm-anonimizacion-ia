@@ -1,18 +1,6 @@
-"""Fase 12 — Barrido de Privacidad Diferencial LOCAL (LDP).
-
-Perturba el conjunto de entrenamiento registro a registro (k-RR para
-categóricas, Laplace acotado para recuentos) con presupuesto user-level
-ε ∈ config.LDP_EPSILON_VALUES y veinte réplicas por punto (semillas
-dispersas, ver config.DP_SEEDS), entrena Regresión Logística y Naive
-Bayes sobre los datos perturbados y evalúa contra el test en claro.
-
-Salidas:
-  arx_kit/results/ldp/resultados_ldp.csv   utilidad por (ε, rep, modelo)
-  arx_kit/results/ldp/fairness_ldp.csv     Accuracy por subgrupo race (LR)
-  arx_kit/results/ldp/wilcoxon_ldp.csv     tests vs baseline con Bonferroni
-  results/comparativa_ldp.png              curva de degradación LDP
-  results/comparativa_ldp_vs_dp.png        LDP vs DP global (LR)
-  results/fairness_ldp.png                 curvas por subgrupo race
+"""Fase 12 — Barrido de DP local: perturba el train registro a registro (k-RR y
+Laplace) con ε user-level de config.LDP_EPSILON_VALUES y veinte réplicas, y evalúa
+LR y Naive Bayes contra el test en claro. Salidas en arx_kit/results/ldp/ y results/.
 """
 
 import pandas as pd
@@ -49,7 +37,7 @@ def run() -> None:
     print("\nResumen mean ± std por (modelo, ε):")
     print(aggregated.to_string())
 
-    # Wilcoxon vs baseline (familia: 2 modelos × |ε|, Bonferroni interno)
+    # Wilcoxon vs baseline (familia: 2 modelos x |ε|, Bonferroni interno)
     baselines = load_baselines()
     df_wilcoxon = build_wilcoxon_table(
         df_ldp, {name: acc for name, (acc, _) in baselines.items() if name in df_ldp["modelo"].unique()}

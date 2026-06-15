@@ -1,13 +1,5 @@
-"""Perfilado de privacidad: riesgo basal de reidentificación.
-
-Cuantifica el riesgo de enlace del dataset SIN anonimizar mediante el
-tamaño de las clases de equivalencia inducidas por los cinco
-cuasi-identificadores (QIDs): un registro con clase de tamaño k=1 es
-únicamente identificable por un atacante con acceso a registros
-administrativos.
-
-Estos números respaldan la motivación de privacidad de la memoria
-(Capítulo 3).
+"""Perfilado de privacidad: riesgo basal de reidentificación del dataset sin
+anonimizar, según el tamaño de las clases de equivalencia de los cinco QIDs.
 """
 
 from typing import Dict, List
@@ -18,11 +10,8 @@ from tfm import config
 
 
 def privacy_profile(df: pd.DataFrame, qids: List[str] = None) -> Dict:
-    """Calcula el perfil de riesgo basal de reidentificación.
-
-    Las clases de equivalencia se construyen agrupando por los QIDs sobre
-    el dataset limpio (la reducción CIE-9 no altera filas ni QIDs, por lo
-    que el resultado es idéntico antes o después de ella).
+    """Perfil de riesgo basal agrupando por QIDs; idéntico antes o después de
+    la reducción CIE-9 (no altera filas ni QIDs).
     """
     if qids is None:
         qids = config.QID_COLUMNS

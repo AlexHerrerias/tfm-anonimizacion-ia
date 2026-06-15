@@ -1,10 +1,5 @@
-"""Fase 0 — Perfilado de privacidad: riesgo basal de reidentificación.
-
-Cuantifica el riesgo de enlace del dataset limpio SIN anonimizar:
-clases de equivalencia sobre los cinco QIDs, y número/porcentaje de
-registros con k=1 (vulnerabilidad extrema) y k<5.
-
-Salida: arx_kit/results/kanon/perfil_privacidad.csv
+"""Fase 0 — Perfilado de privacidad: riesgo basal de reidentificación del dataset
+limpio sin anonimizar. Salida: arx_kit/results/kanon/perfil_privacidad.csv
 """
 
 import pandas as pd

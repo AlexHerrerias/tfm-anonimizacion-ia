@@ -25,17 +25,10 @@ def sweep_dp(
     data_norm: float,
     bounds,
     epsilons: List[float] = None,
-    n_repetitions: int = None,
 ) -> pd.DataFrame:
-    """Ejecuta el barrido completo de ε × repeticiones × 2 modelos.
-
-    Devuelve un DataFrame con una fila por (modelo, epsilon, repetición)
-    sobre el que se pueden calcular media y desviación típica.
-    """
+    """Barrido de ε x repeticiones x 2 modelos; una fila por (modelo, epsilon, repetición)."""
     epsilons = epsilons or config.EPSILON_VALUES
-    n_repetitions = n_repetitions or config.N_REPETITIONS_DP
-    # Semillas dispersas (no consecutivas) para evitar correlaciones residuales del PRNG.
-    seeds = config.DP_SEEDS[:n_repetitions]
+    seeds = config.DP_SEEDS[: config.N_REPETITIONS_DP]
 
     rows: List[Dict] = []
     for epsilon in epsilons:
@@ -57,17 +50,11 @@ def sweep_dp(
 def dp_on_kanonimized(
     filepath_kanon: Path,
     df_test_raw: pd.DataFrame,
-    epsilons: List[float] = None,
-    n_repetitions: int = None,
 ) -> pd.DataFrame:
-    """Aplica DP sobre un conjunto previamente k-anonimizado.
-
-    Replica el sweep DP estándar pero sobre el train procedente de
-    ARX (filas suprimidas eliminadas). Permite cuantificar el coste
-    de utilidad de la defensa en profundidad k-anon + DP.
+    """Sweep DP sobre el train k-anonimizado de ARX (sin filas suprimidas),
+    para medir el coste de utilidad de la defensa en profundidad k-anon + DP.
     """
-    epsilons = epsilons or [0.1, 1.0, 10.0]
-    n_repetitions = n_repetitions or config.N_REPETITIONS_DP
+    epsilons = [0.1, 1.0, 10.0]  # barrido reducido de la fase combo
 
     arrays = load_arx_arrays(filepath_kanon, df_test_raw)
 
@@ -83,5 +70,4 @@ def dp_on_kanonimized(
         data_norm,
         bounds,
         epsilons=epsilons,
-        n_repetitions=n_repetitions,
     )

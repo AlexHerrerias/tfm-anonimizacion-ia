@@ -22,12 +22,7 @@ def loss_disparity(accuracies_by_subgroup: pd.Series) -> float:
 
 
 def loss_disparity_table(df_fairness: pd.DataFrame, x_column: str = "k") -> pd.DataFrame:
-    """Tabla de Loss Disparity por nivel de privacidad.
-
-    Pivota la tabla de fairness (una fila por subgrupo y nivel) y calcula
-    la disparidad max-min de Accuracy para cada valor de `x_column`. Los
-    valores se citan en la memoria, por lo que se persisten en CSV.
-    """
+    """Tabla de Loss Disparity (max-min de Accuracy por subgrupo) para cada valor de `x_column`."""
     pivot = df_fairness.pivot_table(index="race", columns=x_column, values="Accuracy", aggfunc="mean")
     rows = [
         {x_column: level, "loss_disparity": loss_disparity(pivot[level])}
@@ -87,14 +82,13 @@ def fairness_per_race_dp(
     races_test: np.ndarray,
     data_norm: float,
     epsilons: List[float] = None,
-    n_repetitions: int = None,
 ) -> pd.DataFrame:
-    """Calcula la Accuracy por raza para LR-DP a lo largo del barrido de ε."""
+    """Calcula la Accuracy por raza para LR-DP a lo largo del barrido de ε.
+    La fase 5 lo reutiliza sobre el train k-anonimizado con su barrido reducido."""
     epsilons = epsilons or config.EPSILON_VALUES
-    n_repetitions = n_repetitions or config.N_REPETITIONS_DP
 
     rows: List[Dict] = []
-    seeds = config.DP_SEEDS[:n_repetitions]
+    seeds = config.DP_SEEDS[: config.N_REPETITIONS_DP]
     for epsilon in epsilons:
         for rep, seed in enumerate(seeds):
             model = dpm.LogisticRegression(
