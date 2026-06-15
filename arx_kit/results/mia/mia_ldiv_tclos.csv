@@ -1,5 +1,5 @@
 escenario,archivo,seed,TPR,FPR,Advantage,AUC
-k=5 (referencia),arx_output_k5.csv,42,0.498,0.514,-0.016,0.5034
-k=5 + l=5,arx_output_k5_l5.csv,137,0.485,0.506,-0.021,0.4837
-k=5 + t=0.25,arx_output_k5_t025.csv,271,0.464,0.493,-0.029,0.4922
-k=5 + l=5 + t=0.3 (Hard),arx_output_k5_l5_t03.csv,314,0.494,0.509,-0.015,0.503
+k=5 (referencia),arx_output_k5.csv,42,0.446,0.473,-0.027,0.4916
+k=5 + l=5,arx_output_k5_l5.csv,137,0.473,0.505,-0.032,0.4957
+k=5 + t=0.25,arx_output_k5_t025.csv,271,0.465,0.493,-0.028,0.4875
+k=5 + l=5 + t=0.3 (Hard),arx_output_k5_l5_t03.csv,314,0.514,0.489,0.025,0.5193

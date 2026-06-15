@@ -1,17 +1,17 @@
-Configuración,Modelo,b,c,chi2,p_valor,Significativo,p_bonferroni,significativo_bonf
-k=5 + l=5,Regresión Logística,584,595,0.085,0.7708718364989343,No,1.0,False
-k=5 + l=5,Random Forest,556,529,0.623,0.4299192954556946,No,1.0,False
-k=5 + l=5,Árbol de Decisión,994,906,3.984,0.0459429705163783,Sí,0.7350875282620528,False
-k=5 + l=5,Naive Bayes (Gaussian),1937,1289,129.761,0.0,Sí,0.0,True
-k=5 + t=0.5,Regresión Logística,639,617,0.351,0.5534828311565422,No,1.0,False
-k=5 + t=0.5,Random Forest,643,634,0.05,0.8228590056955406,No,1.0,False
-k=5 + t=0.5,Árbol de Decisión,1550,1594,0.588,0.4431531018352911,No,1.0,False
-k=5 + t=0.5,Naive Bayes (Gaussian),2071,1380,137.96,0.0,Sí,0.0,True
-k=5 + t=0.25,Regresión Logística,1084,905,15.93,6.574205300657887e-05,Sí,0.001051872848105262,True
-k=5 + t=0.25,Random Forest,621,582,1.2,0.273255231971743,No,1.0,False
-k=5 + t=0.25,Árbol de Decisión,1946,1766,8.632,0.0033035680523078,Sí,0.0528570888369248,False
-k=5 + t=0.25,Naive Bayes (Gaussian),1927,1280,130.127,0.0,Sí,0.0,True
-k=5 + l=5 + t=0.3 (Hard),Regresión Logística,631,588,1.447,0.2289958187622367,No,1.0,False
-k=5 + l=5 + t=0.3 (Hard),Random Forest,649,591,2.62,0.1055137152897012,No,1.0,False
-k=5 + l=5 + t=0.3 (Hard),Árbol de Decisión,2196,1923,17.962,2.2540165518614156e-05,Sí,0.0003606426482978265,True
-k=5 + l=5 + t=0.3 (Hard),Naive Bayes (Gaussian),1948,1294,131.527,0.0,Sí,0.0,True
+configuracion,archivo,modelo,b,c,chi2,p_value,significativo_005,p_bonferroni,significativo_bonf
+k=5 + l=5,arx_output_k5_l5.csv,Regresión Logística,542,619,4.975,0.025715883611735713,True,0.4114541377877714,False
+k=5 + l=5,arx_output_k5_l5.csv,Random Forest,509,504,0.0158,0.899987731749799,False,1.0,False
+k=5 + l=5,arx_output_k5_l5.csv,Árbol de Decisión,1009,927,3.3889,0.06563488196939593,False,1.0,False
+k=5 + l=5,arx_output_k5_l5.csv,Naive Bayes (Gaussian),1929,1290,126.4505,0.0,True,0.0,True
+k=5 + t=0.5,arx_output_k5_t05.csv,Regresión Logística,582,640,2.6588,0.10298123820782212,False,1.0,False
+k=5 + t=0.5,arx_output_k5_t05.csv,Random Forest,605,603,0.0008,0.9770466183184758,False,1.0,False
+k=5 + t=0.5,arx_output_k5_t05.csv,Árbol de Decisión,1540,1612,1.5993,0.20600215123598242,False,1.0,False
+k=5 + t=0.5,arx_output_k5_t05.csv,Naive Bayes (Gaussian),2062,1379,135.1712,0.0,True,0.0,True
+k=5 + t=0.25,arx_output_k5_t025.csv,Regresión Logística,1084,905,15.9296,6.574205300657887e-05,True,0.001051872848105262,True
+k=5 + t=0.25,arx_output_k5_t025.csv,Random Forest,694,629,3.096,0.07848520836700557,False,1.0,False
+k=5 + t=0.25,arx_output_k5_t025.csv,Árbol de Decisión,1949,1767,8.8162,0.0029856775703736016,True,0.047770841125977626,True
+k=5 + t=0.25,arx_output_k5_t025.csv,Naive Bayes (Gaussian),1927,1280,130.1266,0.0,True,0.0,True
+k=5 + l=5 + t=0.3 (Hard),arx_output_k5_l5_t03.csv,Regresión Logística,577,626,1.9152,0.16638545210559763,False,1.0,False
+k=5 + l=5 + t=0.3 (Hard),arx_output_k5_l5_t03.csv,Random Forest,630,595,0.9437,0.3313349065031329,False,1.0,False
+k=5 + l=5 + t=0.3 (Hard),arx_output_k5_l5_t03.csv,Árbol de Decisión,1878,1824,0.7588,0.3837108897395921,False,1.0,False
+k=5 + l=5 + t=0.3 (Hard),arx_output_k5_l5_t03.csv,Naive Bayes (Gaussian),1946,1294,130.8028,0.0,True,0.0,True
