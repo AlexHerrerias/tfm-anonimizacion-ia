@@ -28,9 +28,9 @@ adversarial mediante MIA (`adversarial-robustness-toolbox`).
 │   ├── local_dp.py            Privacidad Diferencial Local (k-RR + Laplace)
 │   ├── fairness.py            Disparidad por subgrupo race
 │   ├── statistical_tests.py   McNemar y Wilcoxon (con Bonferroni)
-│   ├── mia.py                 Membership Inference Attack Black-Box
+│   ├── mia.py                 MIA Black-Box + réplicas + LiRA offline
 │   ├── plotting.py            Figuras de la memoria
-│   └── pipeline/              Fases 00–11 + CLI (`tfm run …`)
+│   └── pipeline/              Fases 00–13 + CLI (`tfm run …`)
 ├── arx_kit/                   Entradas, salidas y resultados experimentales
 │   ├── inputs/                CSVs y jerarquías que consume ARX Desktop
 │   ├── arx_outputs/           CSVs anonimizados exportados desde ARX (versionados)
@@ -57,7 +57,7 @@ pipeline al raíz del repositorio. Ya no es necesario exportar `PYTHONPATH`.
 
 ## Ejecución del pipeline
 
-El pipeline se compone de **trece fases** (00–12). Lista de fases:
+El pipeline se compone de **catorce fases** (00–13). Lista de fases:
 
 ```bash
 tfm list
@@ -66,7 +66,7 @@ tfm list
 Ejecución completa o por fases:
 
 ```bash
-tfm run all          # las trece fases en secuencia
+tfm run all          # las catorce fases en secuencia
 tfm run 04           # una fase concreta
 tfm run 08 09 10 11  # varias fases en orden
 ```
@@ -78,15 +78,16 @@ tfm run 08 09 10 11  # varias fases en orden
 | 02 | Exporta CSVs y jerarquías para ARX Desktop | `arx_kit/inputs/*` |
 | —  | **Paso manual**: anonimizar en ARX Desktop ([docs/guia_arx.md](docs/guia_arx.md)) | `arx_kit/arx_outputs/*.csv` |
 | 03 | Utilidad post-ARX + fairness por `race` | `resultados_kanon.csv`, `fairness_kanon.csv`, `loss_disparity_kanon.csv` |
-| 04 | Barrido de ε (20 repeticiones) | `resultados_dp.csv`, `fairness_dp.csv` |
-| 05 | Defensa en profundidad k=10 + DP | `resultados_combo.csv` |
+| 04 | Barrido de ε (20 repeticiones) + comparativa cruzada vs k-anon | `resultados_dp.csv`, `fairness_dp.csv` |
+| 05 | Defensa en profundidad k=10 + DP, con fairness y figuras comparativas | `resultados_combo.csv`, `fairness_combo.csv` |
 | 06 | Auditoría adversarial MIA (6 escenarios) | `mia_results.csv` |
 | 07 | McNemar (k-anon) + Wilcoxon (DP), Bonferroni | `mcnemar_kanon.csv`, `wilcoxon_dp.csv` |
 | 08 | Utilidad/equidad/verificación l-div, t-clos y triples | `resultados_ldiv_tclos.csv`, `fairness_ldiv_tclos.csv`, `verificacion_ldiv_tclos.csv` |
 | 09 | MIA sobre configuraciones l/t estrictas | `mia_ldiv_tclos.csv` |
 | 10 | Figuras de la extensión l/t | 4 PNG en `results/` |
 | 11 | McNemar sobre 4 configuraciones l/t extremas | `mcnemar_ldiv_tclos.csv` |
-| 12 | Barrido de Privacidad Diferencial **Local** (LDP, ε × 20 reps) | `resultados_ldp.csv`, `fairness_ldp.csv`, `wilcoxon_ldp.csv` |
+| 12 | Barrido de Privacidad Diferencial **Local** (LDP, ε x 20 reps) | `resultados_ldp.csv`, `fairness_ldp.csv`, `wilcoxon_ldp.csv` |
+| 13 | Auditoría MIA **reforzada**: réplicas x20 (LR + RF) y LiRA offline (64 sombras, TPR@FPR bajo) | `mia_replicas.csv`, `mia_lira.csv`, `lira_scores_*.csv` |
 
 Los CSVs de resultados se guardan bajo `arx_kit/results/` y las figuras PNG
 en `results/`; los nombres coinciden con los referenciados desde la memoria.
@@ -111,6 +112,9 @@ reproducen los valores de la memoria de forma exacta; los modelos de árbol
 (Random Forest, Árbol de Decisión) pueden variar en el tercer decimal entre
 entornos por la resolución de empates en los splits, sensible a la versión
 de numpy/BLAS.
+
+Excepción documentada: las fases 06 y 09 no fijan lasemilla del clasificador 
+atacante de ART y no son reproducibles byte a byte;
 
 ## Dataset
 

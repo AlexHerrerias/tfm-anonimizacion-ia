@@ -44,3 +44,4 @@ _repo/
 # Sistema
 .DS_Store
 Thumbs.db
+.idea/

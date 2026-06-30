@@ -1,16 +1,10 @@
-"""Constantes y parámetros del pipeline experimental.
-
-Fuente única de verdad para rutas, semillas, barridos de privacidad y las
-configuraciones l-diversidad / t-closeness. Ningún otro módulo debe
-hardcodear rutas ni nombres de archivo de resultados.
-
-Nota: el paquete debe instalarse en modo editable (`pip install -e .`)
-para que ROOT apunte al raíz del repositorio y no a site-packages.
-"""
+"""Constantes y parámetros del pipeline experimental: única fuente de verdad
+para rutas, semillas y barridos. Instalar en editable (`pip install -e .`)
+para que ROOT apunte al raíz del repositorio."""
 
 from pathlib import Path
 
-# Rutas relativas al raíz del repositorio (src/tfm/config.py → tres niveles)
+# Rutas relativas al raíz del repositorio (tres niveles desde este archivo)
 ROOT = Path(__file__).resolve().parent.parent.parent
 DATA_DIR = ROOT / "arx_kit"
 
@@ -54,10 +48,8 @@ K_VALUES = [2, 5, 10, 25, 50]
 EPSILON_VALUES = [0.1, 0.5, 1.0, 5.0, 10.0]
 N_REPETITIONS_DP = 20
 
-# Semillas dispersas para las réplicas de Privacidad Diferencial.
-# Se eligen valores no consecutivos para minimizar correlaciones residuales del
-# generador pseudoaleatorio (Mersenne Twister). El número total coincide con
-# N_REPETITIONS_DP.
+# Semillas dispersas (no consecutivas, minimizan correlaciones del PRNG)
+# compartidas por DP, LDP y réplicas MIA; tantas como N_REPETITIONS_DP.
 DP_SEEDS = [42, 137, 271, 314, 1729, 2718, 3141, 6022, 8128, 9999,
             10007, 11113, 13121, 17171, 19273, 23131, 29327, 31193, 33391, 37397]
 
@@ -66,25 +58,13 @@ L_VALUES = [2, 3, 5]
 T_VALUES = [0.5, 0.4, 0.35, 0.3, 0.25]
 SENSITIVE_ATTRIBUTE = "diag_1_category"
 
-# Privacidad Diferencial Local (Fase 12).
-#
-# El presupuesto es POR REGISTRO (user-level): se reparte uniformemente entre
-# los atributos perturbables mediante composición secuencial (ε_j = ε / n_eff).
-# Los cinco primeros valores replican EPSILON_VALUES para la comparativa
-# directa con la DP global; la cola extendida {20, 50, 100, 200} explora a
-# partir de qué presupuesto —ya sin valor protector real— la utilidad
-# comienza a recuperarse, localizando la frontera empírica de viabilidad
-# de la LDP sobre este dataset (n ≈ 78k, 45 atributos).
-#
-# Lectura alternativa "por atributo" (práctica industrial tipo RAPPOR/Apple):
-# equivale a reparametrizar el eje, ε_atributo = ε_registro / n_eff; no
-# requiere experimento aparte y se discute como tal en la memoria.
+# LDP (Fase 12): presupuesto POR REGISTRO repartido uniformemente entre
+# atributos. Los cinco primeros valores replican EPSILON_VALUES; la cola
+# extendida localiza la frontera empírica de recuperación de utilidad.
 LDP_EPSILON_VALUES = [0.1, 0.5, 1.0, 5.0, 10.0, 20.0, 50.0, 100.0, 200.0]
 
-# Columnas con código entero pero semántica nominal (catálogos administrativos
-# del data dictionary IDS_mapping): se perturban con k-RR sobre su dominio
-# observado, aunque para el modelo sigan entrando como variables numéricas
-# (mismo tratamiento de columna que en baseline/DP global → column space 121).
+# Columnas enteras con semántica nominal (catálogos administrativos):
+# se perturban con k-RR sobre su dominio observado.
 LDP_NOMINAL_INT_COLUMNS = (
     "admission_type_id",
     "discharge_disposition_id",
@@ -93,11 +73,7 @@ LDP_NOMINAL_INT_COLUMNS = (
 
 
 def arx_output_filename(k: int, l: int = None, t: float = None) -> str:
-    """Nombre canónico del CSV exportado desde ARX Desktop.
-
-    Convención: arx_output_k<k>[_l<l>][_t<t sin punto>].csv
-    Ejemplos: k=10 → arx_output_k10.csv; k=5, t=0.25 → arx_output_k5_t025.csv
-    """
+    """Nombre canónico del CSV de ARX: arx_output_k<k>[_l<l>][_t<t sin punto>].csv"""
     name = f"arx_output_k{k}"
     if l is not None:
         name += f"_l{l}"
@@ -142,6 +118,38 @@ MCNEMAR_LT_CONFIGURATIONS = [
     ("k=5 + t=0.5",              "arx_output_k5_t05.csv"),
     ("k=5 + t=0.25",             "arx_output_k5_t025.csv"),
     ("k=5 + l=5 + t=0.3 (Hard)", "arx_output_k5_l5_t03.csv"),
+]
+
+# Fase 13: auditoría MIA reforzada (réplicas del Black-Box + LiRA offline).
+
+# Tier 1: réplicas del ataque de la fase 6 con las semillas de DP_SEEDS.
+MIA_N_REPLICAS = 20
+
+# Víctimas del Tier 1; en los escenarios DP solo aplica la LR
+# (diffprivlib no ofrece un Random Forest privado).
+MIA_VICTIMS = ("Regresión Logística", "Random Forest")
+
+# Escenarios l/t estrictos del Tier 1 (sin la referencia k=5, ya cubierta).
+MIA_REPLICAS_LT_TARGETS = [
+    ("k=5 + l=5",                 "arx_output_k5_l5.csv"),
+    ("k=5 + t=0.25",              "arx_output_k5_t025.csv"),
+    ("k=5 + l=5 + t=0.3 (Hard)",  "arx_output_k5_l5_t03.csv"),
+]
+
+# Tier 2: ataque LiRA offline (Carlini et al., 2022) con modelos sombra.
+MIA_SHADOW_COUNT = 64           # modelos sombra por escenario
+LIRA_SHADOW_FRACTION = 0.5      # fracción de la población por sombra
+LIRA_N_TARGETS_PER_CLASS = 10000  # objetivos member / non-member muestreados
+LIRA_FPR_TARGETS = [0.001, 0.01, 0.1]  # TPR @ FPR bajo (métrica clave)
+LIRA_MIN_OUT_SHADOWS = 8        # mínimo de sombras OUT; por debajo, sigma global
+
+# Escenarios del Tier 2 sobre la víctima LR (LiRA sobre RF y la variante
+# online quedan como ampliación opcional).
+LIRA_SCENARIOS = [
+    ("Baseline LR",  "baseline", None),
+    ("LR · k=10",    "kanon",    10),
+    ("LR · k=50",    "kanon",    50),
+    ("LR · DP ε=1.0", "dp",      1.0),
 ]
 
 # Identificadores y atributos del dataset clínico

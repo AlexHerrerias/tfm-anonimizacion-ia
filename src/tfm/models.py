@@ -42,11 +42,8 @@ def build_dp_models(
     bounds: Tuple[np.ndarray, np.ndarray],
     random_state: int,
 ) -> Dict[str, object]:
-    """Versiones diferencialmente privadas de los dos modelos comparables.
-
-    max_iter=100 evita la no-convergencia de L-BFGS bajo gradientes ruidosos
-    para ε altos sin penalizar el rendimiento del optimizador.
-    """
+    """Versiones diferencialmente privadas de los dos modelos comparables;
+    max_iter=100 evita la no-convergencia de L-BFGS con gradientes ruidosos."""
     return {
         "Regresión Logística": dpm.LogisticRegression(
             epsilon=epsilon,
@@ -85,14 +82,48 @@ def fit_lr_dp(X_train_scaled, y_train, epsilon: float, data_norm: float):
     return model
 
 
-def predict_baselines(X_train_scaled, X_test_scaled, y_train) -> Dict[str, np.ndarray]:
-    """Entrena los cuatro modelos baseline y devuelve sus predicciones sobre test.
+def fit_rf_baseline(X_train_scaled, y_train) -> RandomForestClassifier:
+    """Random Forest entrenado con los hiperparámetros del baseline
+    (segunda víctima MIA de la Fase 13, de mayor capacidad que la LR)."""
+    model = RandomForestClassifier(
+        n_estimators=100,
+        max_depth=10,
+        random_state=config.RANDOM_STATE,
+        class_weight="balanced",
+    )
+    model.fit(X_train_scaled, y_train)
+    return model
 
-    El espacio de features debe construirse exactamente como en
-    `stratified_split + fit_scaler` para que las predicciones coincidan
-    byte a byte con el baseline de la Fase 1 (columna k=0 de
-    `resultados_kanon.csv`).
-    """
+
+def fit_lr_shadow(X, y, random_state: int) -> LogisticRegression:
+    """Sombra LiRA: idéntica a `fit_lr_baseline` salvo la semilla,
+    que varía por sombra."""
+    model = LogisticRegression(
+        max_iter=1000,
+        random_state=random_state,
+        class_weight="balanced",
+    )
+    model.fit(X, y)
+    return model
+
+
+def fit_lr_dp_shadow(X, y, epsilon: float, data_norm: float, random_state: int):
+    """Sombra LiRA del escenario DP: la semilla por sombra materializa la
+    aleatoriedad del mecanismo que el atacante debe calibrar."""
+    model = dpm.LogisticRegression(
+        epsilon=epsilon,
+        data_norm=data_norm,
+        max_iter=100,
+        random_state=random_state,
+    )
+    model.fit(X, y)
+    return model
+
+
+def predict_baselines(X_train_scaled, X_test_scaled, y_train) -> Dict[str, np.ndarray]:
+    """Entrena los cuatro baselines y devuelve sus predicciones sobre test.
+    Las matrices deben venir de `stratified_split + fit_scaler` para
+    reproducir byte a byte el baseline de la Fase 1."""
     predictions: Dict[str, np.ndarray] = {}
     for name, model in build_baseline_models().items():
         model.fit(X_train_scaled, y_train)

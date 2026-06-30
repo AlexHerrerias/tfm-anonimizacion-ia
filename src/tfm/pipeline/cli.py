@@ -4,14 +4,27 @@ import argparse
 import importlib
 import sys
 import time
+import warnings
 
-# Registro ordenado de fases: id → (módulo, descripción corta)
+
+def _filter_expected_warnings() -> None:
+    """Filtro para avisos esperados que inundan la consola para poder ver correctamente los pasos"""
+    warnings.filterwarnings(
+        "ignore", message=".*encountered in matmul", category=RuntimeWarning
+    )
+    warnings.filterwarnings(
+        "ignore",
+        message="lbfgs failed to converge",
+        module=r"diffprivlib\.models\.logistic_regression",
+    )
+
+# Registro ordenado de fases: id a (módulo, descripción corta)
 PHASES = {
     "00": ("tfm.pipeline.phase00_profiling", "Perfilado de privacidad (riesgo basal de reidentificación)"),
     "01": ("tfm.pipeline.phase01_baseline", "Baseline de utilidad sin privacidad"),
     "02": ("tfm.pipeline.phase02_export_arx", "Exportación de CSVs y jerarquías para ARX Desktop"),
     "03": ("tfm.pipeline.phase03_evaluate_kanon", "Evaluación post-ARX (k-anonimidad) + fairness"),
-    "04": ("tfm.pipeline.phase04_dp_sweep", "Barrido de Privacidad Diferencial (ε × 20 reps)"),
+    "04": ("tfm.pipeline.phase04_dp_sweep", "Barrido de Privacidad Diferencial (ε x 20 reps)"),
     "05": ("tfm.pipeline.phase05_combo", "Defensa en profundidad: DP sobre k=10"),
     "06": ("tfm.pipeline.phase06_mia", "Auditoría adversarial MIA Black-Box"),
     "07": ("tfm.pipeline.phase07_statistical_tests", "Tests de significancia (McNemar + Wilcoxon)"),
@@ -19,7 +32,8 @@ PHASES = {
     "09": ("tfm.pipeline.phase09_mia_ldiv_tclos", "MIA sobre configuraciones l/t estrictas"),
     "10": ("tfm.pipeline.phase10_plots_ldiv_tclos", "Figuras de la extensión l/t"),
     "11": ("tfm.pipeline.phase11_mcnemar_ldiv_tclos", "McNemar sobre configuraciones l/t extremas"),
-    "12": ("tfm.pipeline.phase12_ldp_sweep", "Barrido de Privacidad Diferencial Local (LDP, ε × 20 reps)"),
+    "12": ("tfm.pipeline.phase12_ldp_sweep", "Barrido de Privacidad Diferencial Local (LDP, ε x 20 reps)"),
+    "13": ("tfm.pipeline.phase13_mia_strong", "Auditoría MIA reforzada (réplicas x20 + LiRA offline)"),
 }
 
 # La Fase 2 termina en un paso manual (ARX Desktop). Tras ejecutarla, las
@@ -36,6 +50,7 @@ def _normalize(phase: str) -> str:
 
 
 def _run_phase(phase_id: str) -> None:
+    _filter_expected_warnings()
     module_name, description = PHASES[phase_id]
     print(f"\n{'=' * 70}")
     print(f"Fase {phase_id} — {description}")
